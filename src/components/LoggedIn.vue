@@ -15,6 +15,8 @@
             Client
           </v-btn>        
       </router-link>
+
+      <v-btn @click="logout">Logout</v-btn>
       
     </v-app-bar>
     <v-sheet
@@ -28,7 +30,23 @@
 </template>
 
 <script>
+import http from '@/axios';
+
 export default {
   name: "loggedIn",
+  methods: {
+    async logout() {
+      try {
+        const response = http.post('logout')
+        console.log(response)
+        this.$router.push({ name: 'HomeComponent' })
+        
+
+      } catch (error) {
+        console.log(error)
+      }
+
+    }
+  }
 };
 </script>

@@ -1,10 +1,12 @@
 import Vue from "vue";
+import http from "@/axios";
 import VueRouter from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import LoginComponent from "@/components/LoginComponent.vue";
 import LoggedIn from "@/components/LoggedIn.vue";
 import ClientComponent from "@/components/ClientComponent.vue";
 import LogoutComponent from "@/components/LogoutComponent.vue";
+import PdvComponent from "@/components/PdvComponent.vue";
 
 Vue.use(VueRouter);
 
@@ -23,6 +25,7 @@ const routes = [
     path: "/logout",
     name: "LogoutComponent",
     component: LogoutComponent,
+    meta: { requiresAuth: true },
   },
   {
     path: "/client",
@@ -34,6 +37,12 @@ const routes = [
     path: "/loggedin",
     name: "loggedIn",
     component: LoggedIn,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/pdv",
+    name: "PdvComponent",
+    component: PdvComponent,
     meta: { requiresAuth: true },
   },
   {
@@ -62,7 +71,14 @@ router.beforeEach((to, from, next) => {
   //if (!token && to.name != 'LoginComponent') {
   if (!token && to.meta.requiresAuth) {
     console.log("Precisa de autorização para entrar na rota: " + to);
-    next({ name: 'LoginComponent' })
+    next({ name: 'HomeComponent' })
+  }
+
+  if (to.meta.requiresAuth) {
+    const me = http.post('me')
+    me
+    .then(() => {})
+    .catch(error => {console.log(error)} )
   }
 
   next()

@@ -37,7 +37,8 @@
 </template>
 
 <script>
-import axios from "axios";
+//import axios from "axios";
+import { mapActions, mapMutations } from "vuex";
 //import http from '@/services/http'
 
 export default {
@@ -57,6 +58,33 @@ export default {
     password: "",
   }),
   methods: {
+  ...mapMutations({
+    SET_TOKEN: 'SET_TOKEN'
+  }),
+
+  ...mapActions({
+    setToken: 'setToken'
+  }),
+
+  async validate() {
+    const payload = {
+        password: this.password,
+        email: this.email,
+    };
+
+    //console.log('passssss', payload.password, payload.email)
+
+    const result = await this.setToken(payload)
+
+    //console.log(result)
+
+    if(result) {
+      this.$router.push({ name: 'loggedIn'}).catch(error => console.log(error))
+      this.$refs.form.validate();
+    }
+  },
+  
+  /*
     async validate() {
       try {
         const payload = {
@@ -75,58 +103,22 @@ export default {
         );
 
         //const response = http.post('/login', payload)
-
         //console.log('aquiii', response)
 
         if(response.data.error) console.log('Erro em autenticar!!!')
 
         if(response.data.token) {
-            localStorage.setItem('authToken',  response.data.token)
-            document.cookie = 'authToken='+response.data.token
+            //localStorage.setItem('authToken',  response.data.token)
+            //document.cookie = 'authToken='+response.data.token
+            //this.$store.commit('SET_TOKEN', response.data.token)
+            //this.SET_TOKEN(response.data.token)
+            this.$store.dispatch('setToken', response.data.token)
             this.$router.push({ name: 'loggedIn'})
         }
-        
-        /*
-        axios.interceptors.request.use(
-          config => {
-            //definir para todas as requisições os parâmetros de accept e authorization
-
-            config.headers.Accept = 'application/json'
-            config.headers.Authorization = this.token
-
-          
-              // config.headers.['Accept'] = ''
-              //   config.headers.['Authorization'] = ''
-             
-
-            console.log('config request:', config)
-            return config
-          },
-          error => {
-            
-            console.log('Error request:', error)
-            return Promise.reject(error)
-          }
-        )
-        
-        axios.interceptors.response.use(
-          response => {
-            console.log('response response:', response)
-            return response
-          },
-          error => {
-            
-            console.log('Error response:', error)
-            return Promise.reject(error)
-          }
-        )
-        */
-
         
         //this.setToken(response.data.token)
 
         //console.log('login', response.data);
-
         
         // const res = await axios.post("http://127.0.0.1:8000/api/me", null,
         //  {
@@ -139,15 +131,15 @@ export default {
         //   // setAuthUser(res.data)
 
         //   this.$router.push({name: ''})
-        // }
-               
+        // }               
 
       } catch (error) {
         console.log(error.response);
       }
-
       //this.$refs.form.validate();
     },
+
+    */
     
     reset() {
       this.$refs.form.reset();
@@ -160,7 +152,15 @@ export default {
       //console.log('token dentro do computed',  token)
       return token
     }
-  }
+  },
+
+  // created() {
+  //   console.log('create')
+  // },
+
+  // mounted() {
+  //   console.log('mountedd')
+  // }
 };
 </script>
 

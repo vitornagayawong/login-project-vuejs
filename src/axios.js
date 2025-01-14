@@ -1,4 +1,5 @@
 import axios from "axios";
+//import router from "./router";
 
 //const token = localStorage.getItem('authToken')
 
@@ -26,7 +27,7 @@ http.interceptors.request.use(
     // config.headers.['Accept'] = ''
     // config.headers.['Authorization'] = ''
 
-    console.log("Interceptando o request antes do envio:", config);
+    //console.log("Interceptando o request antes do envio:", config);
     return config;
 
   },
@@ -38,7 +39,7 @@ http.interceptors.request.use(
 
 http.interceptors.response.use( //sucesso
   (response) => {
-    console.log("response response:", response);
+    //console.log("response response:", response);
     return response;
   },
   (error) => {
@@ -51,12 +52,18 @@ http.interceptors.response.use( //sucesso
           //console.log('refresh com sucesso: ', response)
 
           localStorage.setItem('authToken', response.data.tokenAtualizado)
-          document.cookie = 'authToken=' + response.data.tokenAtualizado
-          console.log('NOVO authToken: ', response.data.tokenAtualizado)
+          //document.cookie = 'authToken=' + response.data.tokenAtualizado
+          //console.log('NOVO authToken: ', response.data.tokenAtualizado)
           //window.location.reload()
         })
-
     }
+
+    if(error.response.status == 500 && error.response.data.message == "Token has expired and can no longer be refreshed") {
+      localStorage.setItem('authToken', '')    
+      window.location.href = '/login';  
+      //router.push({ name: 'HomeComponent' })
+    }
+
     return Promise.reject('promise reject: ' + error);
   }
 );

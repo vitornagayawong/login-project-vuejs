@@ -19,12 +19,22 @@ export default new Vuex.Store({
     login: {
       email: '',
       password: ''
-    }
+    },
+    clients: [],
+    products: []
   },
 
   getters: {
     getAvatarName(state) {
       return state.avatar.name
+    },
+
+    getAllClients(state) {
+      return state.clients
+    },
+    
+    getAllProducts(state) {
+      return state.products
     }
   },
 
@@ -36,7 +46,15 @@ export default new Vuex.Store({
 
     SET_AVATAR_NAME(state, payload) {
       state.avatar.name = payload
-    }
+    },
+
+    SET_ALL_CLIENTS(state, payload) {
+      state.clients = payload
+    },
+
+    SET_ALL_PRODUCTS(state, payload) {
+      state.products = payload
+    }    
   },
 
   /*
@@ -66,7 +84,32 @@ export default new Vuex.Store({
 
       return false
 
-    }
+    },
+
+    async setAllClients({ commit }, payload) {
+      try {
+        const response = await http.get('clientes')
+
+        payload = response.data        
+
+        if(response) {
+          commit('SET_ALL_CLIENTS', payload)
+        }
+      } catch(exception) {
+        console.log(exception)
+      }
+    },
+
+    async setAllProducts({commit}) {
+      try {
+        const response = await http.get('produtos')
+        // payload = response
+        // console.log(payload)
+        commit('SET_ALL_PRODUCTS', response.data)        
+      } catch(exception) {  
+        console.log(exception)
+      }
+    }   
 
     //Segunda forma de fazer!
     // setToken({ commit }, payload) {

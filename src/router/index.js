@@ -7,6 +7,7 @@ import LoggedIn from "@/components/LoggedIn.vue";
 import ClientComponent from "@/components/ClientComponent.vue";
 import LogoutComponent from "@/components/LogoutComponent.vue";
 import PdvComponent from "@/components/PdvComponent.vue";
+import ProductsComponent from "@/components/ProductsComponent.vue";
 
 Vue.use(VueRouter);
 
@@ -43,6 +44,12 @@ const routes = [
     path: "/pdv",
     name: "PdvComponent",
     component: PdvComponent,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/products",
+    name: "ProductsComponent",
+    component: ProductsComponent,
     meta: { requiresAuth: true },
   },
   {

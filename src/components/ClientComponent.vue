@@ -59,7 +59,7 @@
 import http from '@/axios';
 
   export default {
-    name: 'ClientComponent',
+    name: 'Component',
     data: () => ({
       valid: true,
       name: '',

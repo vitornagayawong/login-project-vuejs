@@ -10,12 +10,16 @@
 
       <v-spacer></v-spacer>
 
+      <router-link :to="{ name: 'ProductsComponent' }">
+        <v-btn> Products </v-btn>
+      </router-link>
+
       <router-link :to="{ name: 'PdvComponent' }">
         <v-btn> PDV </v-btn>
       </router-link>
       
       <router-link :to="{ name: 'ClientComponent' }">
-        <v-btn> Client </v-btn>
+        <v-btn> User </v-btn>
       </router-link>
 
       <v-btn @click="logout">Logout</v-btn>

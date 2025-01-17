@@ -17,6 +17,10 @@
       <router-link :to="{ name: 'PdvComponent' }">
         <v-btn> PDV </v-btn>
       </router-link>
+
+      <router-link :to="{ name: 'PdvComponent2' }">
+        <v-btn> PDV2 </v-btn>
+      </router-link>
       
       <router-link :to="{ name: 'ClientComponent' }">
         <v-btn> User </v-btn>

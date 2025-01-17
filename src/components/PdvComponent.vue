@@ -14,48 +14,6 @@
       </v-row>
     </v-container>
 
-    <!-- <v-text-field
-      
-      label="Filter by name"
-      prepend-icon="mdi-magnify"
-      clearable
-    >
-    </v-text-field> -->
-
-    <!-- <v-data-table
-    v-model="selected"
-    :headers="headers"
-    :items="getAllProducts"
-    :single-select="singleSelect"
-    item-key="name"
-    show-select
-    class="elevation-1"
-    >
-      <template v-slot:top>
-        <v-switch
-          v-model="singleSelect"
-          label="Single select"
-          class="pa-3"
-        ></v-switch>
-      </template>
-
-      <template v-slot:[`item.actions`]="{ item }">
-        <v-icon
-          small
-          class="mr-2"
-          @click="editItem(item)"
-        >
-          mdi-pencil
-        </v-icon>
-        <v-icon
-          small
-          @click="deleteItem(item)"
-        >
-          mdi-delete
-        </v-icon>
-      </template>
-  </v-data-table> -->
-
     <v-text-field
       v-model="searchQuery"
       label="Filter products by name"
@@ -63,7 +21,6 @@
     ></v-text-field>
 
     <v-data-table
-      v-model="selected"
       :headers="headers"
       :items="filteredProducts"
       item-key="id"
@@ -74,6 +31,7 @@
           <v-icon>mdi-eye</v-icon>
         </v-btn>
       </template>
+
     </v-data-table>
 
     <v-dialog v-model="modal">
@@ -85,24 +43,79 @@
         <v-text-field
           label="Quantity"
           v-model="selectedProductQuantity"
-        ></v-text-field>
-        {{ cart }} 
-
-        {{ orderTotalPrice }}
+        ></v-text-field>      
+        
         <v-card-actions>
           <v-btn text @click="closeModal">Fechar</v-btn>
           <v-btn text @click="addToCart">Add to Cart</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <v-container fluid>
+      <v-row align="center">
+        <v-col class="d-flex" cols="12" sm="6">
+          <v-select
+            label="Select a type of payment"
+            :items=typesPayment
+            item-text="description"
+            item-value="description"
+            v-model="selectedTypeOfPayment"
+          ></v-select>
+        </v-col>
+      </v-row>
+    </v-container>    
+    
+    <br>
+    
+    <v-data-table
+      :headers="headersCart"
+      :items="cart"
+      :items-per-page="5"
+      class="elevation-1"
+    >
+      <template v-slot:[`item.actions`]="{ item }">
+        <v-btn icon @click="openModalCart(item)">
+          <v-icon>mdi-eye</v-icon>
+        </v-btn>
+      </template>
+
+    </v-data-table>
+
+    <v-dialog v-model="modalCart">
+      <v-card>
+        <v-card-title>
+          <span class="headline">Detalhes do Produto no Carrinho</span>
+        </v-card-title>
+
+        <h1>Qtd Prod: {{ selectedProduct.quantidade }}</h1>        
+
+        <v-text-field
+          label="Input a new desired quantity"
+          v-model="newProductQuantityInCart"
+        ></v-text-field>      
+        
+        <v-card-actions>
+          <v-btn text @click="closeModal">Fechar</v-btn>
+          <v-btn text @click="updateItem">Update Item</v-btn>
+          <v-btn text @click="removeItemFromCart">Remove Item from Cart</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  
+  <br>
+  
+  <v-btn @click="finalizePurchase()">Finalize purchase</v-btn>
   </div>
 </template>
 
 <script>
+import http from "@/axios";
 import { mapActions, mapGetters, mapState } from "vuex";
 
 export default {
   name: "PdvComponent",
+
   data() {
     return {
       selectedClient: "",
@@ -111,17 +124,16 @@ export default {
       singleSelect: true,
       selected: [],
       modal: false,
+      modalCart: false,
       selectedProduct: {},
       selectedProductQuantity: 0,
-      // productToBePutInCart: {
-      //   id: "",
-      //   nome: "",
-      //   descricao: "",
-      //   preco: 0,
-      //   peso: 0,
-      //   altura: 0,
-      //   quantidade: 0,
-      // },
+      newProductQuantityInCart: 0,
+      selectedTypeOfPayment: '',
+      typesPayment: [
+        {description: 'Credit'},
+        {description: 'Debit'},
+        {description: 'Pix'}
+      ],
       headers: [
         {
           text: "Name",
@@ -136,9 +148,25 @@ export default {
         { text: "Stock", value: "estoque" },
         { text: "Ações", value: "actions" },
       ],
+      headersCart: [
+        {
+          text: "Name",
+          align: "start",
+          sortable: false,
+          value: "nome",
+        },
+        { text: "Description", value: "descricao" },
+        { text: "Price", value: "preco" },
+        { text: "Weight", value: "peso" },
+        { text: "Height", value: "altura" },
+        { text: "Quantity", value: "quantidade" },
+        { text: "Ações", value: "actions" }          
+      ],
     };
   },
+
   methods: {
+
     ...mapActions({
       setAllClients: "setAllClients",
       setAllProducts: "setAllProducts",
@@ -148,29 +176,52 @@ export default {
       this.selectedProduct = product;
       this.modal = true;
     },
+    
+    openModalCart(product) {      
+      this.selectedProduct = product;
+      this.modalCart = true;
+    },
 
     closeModal() {
       this.modal = false;
+      this.modalCart = false;
     },
 
-    /*
-      addToCart() {
-        if(this.selectedProductQuantity > this.selectedProduct.estoque) {
-          console.log('quantity higher then the stock')
-        } else { //ok          
-          this.selectedProduct.estoque -= this.selectedProductQuantity          
-          // this.productToBePutInCart.id = this.selectedProduct.id
-          // this.productToBePutInCart.nome = this.selectedProduct.nome
-          // this.productToBePutInCart.descricao = this.selectedProduct.descricao
-          // this.productToBePutInCart.preco = this.selectedProduct.preco
-          // this.productToBePutInCart.peso = this.selectedProduct.peso
-          // this.productToBePutInCart.altura = this.selectedProduct.altura
-          // this.productToBePutInCart.quantidade = this.selectedProductQuantity           
+    async finalizePurchase() {
+      try {
+        const date = new Date()
+        const day = date.getDate()
+        let month = date.getMonth() + 1
+        const year = date.getFullYear()
 
-          this.cart.push(this.productToBePutInCart)
-        }       
+        //console.log(day, month, year)
+
+        if(month < 10) {
+          month = '0' + month
+        }
+
+        const fullDate = year + '-' + month + '-' + day
+
+        console.log(this.selectedTypeOfPayment)
+
+        const payload = {
+          cliente_id: this.selectedClient,
+          data: fullDate,
+          valor_total: this.orderTotalPrice,
+          forma_pgt: this.selectedTypeOfPayment,
+          produtos: this.cart
+        }
+
+        //const timeStamp = Date.now()
+        //console.log(timeStamp)
+
+        const response = await http.post('pedidos', payload)
+        console.log(response)
+
+      } catch(e) {
+        console.log(e)
       }
-      */
+    },
 
     addToCart() {
       try {
@@ -182,13 +233,10 @@ export default {
           console.log('a', existingProductIndex);
 
           if (existingProductIndex !== -1) {
-            //console.log("aqq");
             this.cart[existingProductIndex].quantidade += Number(this.selectedProductQuantity);
             this.selectedProduct.estoque -= this.selectedProductQuantity;
             this.cart[existingProductIndex].estoque = this.selectedProduct.estoque
           } else {
-            //console.log(JSON.stringify(this.selectedProduct));
-
             this.selectedProduct.estoque -= this.selectedProductQuantity;
 
             const productToBePutInCart = {
@@ -196,32 +244,31 @@ export default {
               quantidade: parseInt(this.selectedProductQuantity)
             }
 
-            console.log('aquii',JSON.stringify(productToBePutInCart))
+            //console.log('aquii',JSON.stringify(productToBePutInCart))
 
-            // this.productToBePutInCart.id = this.selectedProduct.id;
-            // this.productToBePutInCart.nome = this.selectedProduct.nome;
-            // this.productToBePutInCart.descricao = this.selectedProduct.descricao;
-            // this.productToBePutInCart.preco = this.selectedProduct.preco;
-            // this.productToBePutInCart.peso = this.selectedProduct.peso;
-            // this.productToBePutInCart.altura = this.selectedProduct.altura;
-            // this.productToBePutInCart.quantidade = Number(
-            //   this.selectedProductQuantity
-            // );
-
-            //console.log(JSON.stringify(this.productToBePutInCart));
             this.cart.push(productToBePutInCart)
           }
-
-          //this.selectedProduct.estoque -= this.selectedProductQuantity;
-          // this.selectedProduct = null;
-          // this.selectedProductQuantity = null;
-        }
-
-        //this.orderTotalPrice
+        }        
       } catch (e) {
         console.log(e);
       }
     },
+
+    updateItem() {
+      //console.log(this.cart);
+      //console.log(this.selectedProduct)
+      //this.selectedProduct.quantidade = this.selectedProductQuantity
+      let index = this.cart.findIndex(product => product.id == this.selectedProduct.id)
+      this.cart[index].quantidade = this.newProductQuantityInCart
+      //console.log(this.cart[index].id)
+      //console.log(this.cart[index].quantidade)
+    },
+
+    removeItemFromCart() {
+      let index = this.cart.findIndex(product => product.id == this.selectedProduct.id)
+      this.cart.splice(index, 1)
+      console.log(this.cart)
+    }
   },
 
   computed: {
@@ -245,7 +292,7 @@ export default {
       this.cart.forEach(order => {
         totalPrice += order.preco * order.quantidade
       });
-      console.log('hehe', totalPrice)
+
       return totalPrice
     }
   },

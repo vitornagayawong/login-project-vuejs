@@ -31,7 +31,6 @@ export default {
   data() {
     return {
       items: [
-        { title: "Home", icon: "mdi-view-dashboard", route: "/" },
         { title: "About", icon: "mdi-image", route: "/about" },
         { title: "LoggedIn", icon: "mdi-image", route: "/loggedin" },
       ],

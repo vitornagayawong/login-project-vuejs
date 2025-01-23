@@ -9,19 +9,20 @@ import LogoutComponent from "@/components/LogoutComponent.vue";
 import PdvComponent from "@/components/PdvComponent.vue";
 import ProductsComponent from "@/components/ProductsComponent.vue";
 import PdvComponent2 from "@/components/PdvComponent2.vue";
+import OrdersComponent from "@/components/OrdersComponent.vue";
 
 Vue.use(VueRouter);
 
 const routes = [
   {
     path: "/",
-    name: "HomeComponent",
-    component: HomeView,
-  },
-  {
-    path: "/login",
     name: "LoginComponent",
     component: LoginComponent,
+  },
+  {
+    path: "/home",
+    name: "HomeComponent",
+    component: HomeView,
   },
   {
     path: "/logout",
@@ -57,6 +58,12 @@ const routes = [
     path: "/products",
     name: "ProductsComponent",
     component: ProductsComponent,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/orders",
+    name: "OrdersComponent",
+    component: OrdersComponent,
     meta: { requiresAuth: true },
   },
   {

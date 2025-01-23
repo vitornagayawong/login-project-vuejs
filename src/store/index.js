@@ -21,7 +21,21 @@ export default new Vuex.Store({
       password: ''
     },
     clients: [],
-    products: []
+    products: [],
+    pagination : {
+      from: 1,
+      last: 0
+    },
+    page: 1,
+
+    orders: [],
+
+    paginationOrders: {
+      from: 1,
+      lastPage: 0
+    },
+
+    pageOrders: 1,  //novo número da página.
   },
 
   getters: {
@@ -35,7 +49,16 @@ export default new Vuex.Store({
     
     getAllProducts(state) {
       return state.products
-    }
+    },
+
+    getPagination(state) { //paginacao dos produtos
+      return state.pagination
+    },
+
+    getOrders(state) {
+      return state.orders
+    },
+
   },
 
   mutations: {
@@ -53,8 +76,33 @@ export default new Vuex.Store({
     },
 
     SET_ALL_PRODUCTS(state, payload) {
-      state.products = payload
-    }    
+      state.products = payload.map(el => {
+        return {
+          ...el,
+          personalizado: `(${el.id}) - ${el.nome} - ${el.descricao}`
+        }
+      })
+    },
+
+    SET_PAGINATION(state, payload) { //paginacao dos produtos
+      state.pagination = payload
+    },
+
+    SET_PAGE(state, payload) { //página atual dos produtos
+      state.page = payload
+    },
+
+    SET_ORDERS(state, payload) { 
+     state.orders = payload 
+    },
+
+    SET_ORDERS_PAGINATION(state, payload) { //paginacao dos pedidos
+      state.paginationOrders = payload
+    },
+
+    SET_PAGE_ORDERS(state, payload) { //página atual dos pedidos
+      state.pageOrders = payload
+    }
   },
 
   /*
@@ -68,7 +116,7 @@ export default new Vuex.Store({
     async setToken({ commit }, payload) {
       //poderia fazer um processamento assíncrono e colocar regras de negócio
      
-      console.log('payloadddd', payload)
+      //console.log('payloadddd', payload)
 
       const response = await http.post("http://127.0.0.1:8000/api/login", payload);
 
@@ -83,7 +131,6 @@ export default new Vuex.Store({
       }
 
       return false
-
     },
 
     async setAllClients({ commit }, payload) {
@@ -100,16 +147,49 @@ export default new Vuex.Store({
       }
     },
 
-    async setAllProducts({commit}) {
+    async setAllProducts({commit, state}, payload) {
       try {
-        const response = await http.get('produtos')
+        //console.log(payload)
+        //console.log(commit)
+        let encoded = ''
+
+        if(payload) {
+          encoded = encodeURI(`&filtroNomeProd=nome:like:${payload}`) //console.log(encoded)          
+        }
+
+        //const { data } = await http.get(`produtos?page=${state.page}${encoded}`)
+        const response = await http.get(`produtos?page=${state.page}${encoded}`)
+
+        const responseData = response.data
         // payload = response
-        // console.log(payload)
-        commit('SET_ALL_PRODUCTS', response.data)        
+        commit('SET_ALL_PRODUCTS', responseData.data)      
+        commit('SET_PAGINATION', { last: responseData.last_page, from: responseData.from })
       } catch(exception) {  
         console.log(exception)
       }
-    }   
+    },
+
+    setPage({commit}, payload) {
+      commit('SET_PAGE', payload)
+    },
+
+    async setOrders({state, commit}) {
+      try {
+        const { data } = await http.get(`pedidos?page=${state.pageOrders}`) //propriedade page o laravel entende
+
+        //console.log('a', data)
+
+        commit('SET_ORDERS', data.data)
+        commit('SET_ORDERS_PAGINATION', { from: data.from, lastPage: data.last_page }) //objeto tem que ter os mesmos nomes das propriedades de paginationOrders ali na state
+         
+      } catch (e) {
+        console.log(e)
+      }
+    },
+
+    setPageOrders({commit}, payload) {
+      commit('SET_PAGE_ORDERS', payload)
+    }
 
     //Segunda forma de fazer!
     // setToken({ commit }, payload) {

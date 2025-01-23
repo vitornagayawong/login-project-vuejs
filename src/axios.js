@@ -5,6 +5,11 @@ import axios from "axios";
 
 //console.log(token)
 
+function removeTokenAndRedirectHome() {
+  localStorage.setItem('authToken', '') 
+  window.location.href = '/';
+}
+
 const http = axios.create({
     baseURL: 'http://127.0.0.1:8000/api/',
 
@@ -58,11 +63,22 @@ http.interceptors.response.use( //sucesso
         })
     }
 
+   
+
     if(error.response.status == 500 && error.response.data.message == "Token has expired and can no longer be refreshed") {
-      localStorage.setItem('authToken', '')    
-      window.location.href = '/login';  
+      removeTokenAndRedirectHome()
       //router.push({ name: 'HomeComponent' })
     }
+
+    if(error.response.status == 401 && error.response.data.message == "The token has been blacklisted") {
+      removeTokenAndRedirectHome()  
+      //router.push({ name: 'HomeComponent' })
+    }
+
+    if(error.response.status == 401 && error.response.statusText == "Unauthorized") {  
+      window.location.href = '/';
+    }
+
 
     return Promise.reject('promise reject: ' + error);
   }

@@ -12,18 +12,21 @@
           ></v-select>
         </v-col>
       </v-row>
-    </v-container>
+    </v-container>   
 
     <v-row>
       <v-col cols="4">
         <v-autocomplete
           v-model="selectedProduct"
-          :items="getAllProducts"
-          item-text="nome"
+          :items="getFilteredProducts"
+          item-text="personalizado"
           item-value="id"
           dense
           filled
-          label="Filled"
+          label="Product name"
+          :search-input="searchQuery"
+          @update:search-input="onSearchInput"
+          no-filter
         ></v-autocomplete>
       </v-col>
 
@@ -93,16 +96,15 @@
       </v-row>
     </v-container>
 
-    {{ this.orderTotalPrice }}
-    {{ this.cart }}
-
     <v-btn @click="finalizePurchase()">Finalize purchase</v-btn>
+    
   </div>
 </template>
 
 <script>
 import http from "@/axios";
 import { mapActions, mapGetters, mapState } from "vuex";
+import { debounce } from "lodash";
 
 export default {
   name: "PdvComponent2",
@@ -154,6 +156,7 @@ export default {
         { text: "Quantity", value: "quantidade" },
         { text: "Ações", value: "actions" },
       ],
+      filterProducts: [],
     };
   },
 
@@ -185,8 +188,6 @@ export default {
         let month = date.getMonth() + 1;
         const year = date.getFullYear();
 
-        //console.log(day, month, year)
-
         if (month < 10) {
           month = "0" + month;
         }
@@ -203,9 +204,6 @@ export default {
           produtos: this.cart,
         };
 
-        //const timeStamp = Date.now()
-        //console.log(timeStamp)
-
         const response = await http.post("pedidos", payload);
         console.log(response);
       } catch (e) {
@@ -215,50 +213,19 @@ export default {
 
     addToCart() {
       try {
-        // if (this.selectedProductQuantity > this.selectedProduct.estoque) {
-        //   console.log("Quantidade maior que o estoque");
-        // } else {
-        //   const existingProductIndex = this.cart.findIndex(
-        //     (item) => item.id === this.selectedProduct.id
-        //   );
-
-        //   console.log("a", existingProductIndex);
-
-        //   if (existingProductIndex !== -1) {
-        //     this.cart[existingProductIndex].quantidade += Number(
-        //       this.selectedProductQuantity
-        //     );
-        //     this.selectedProduct.estoque -= this.selectedProductQuantity;
-        //     this.cart[existingProductIndex].estoque =
-        //       this.selectedProduct.estoque;
-        //   } else {
-        //     this.selectedProduct.estoque -= this.selectedProductQuantity;
-
-        //     const productToBePutInCart = {
-        //       ...this.selectedProduct, //spread operator
-        //       quantidade: parseInt(this.selectedProductQuantity),
-        //     };
-
-        //     //console.log('aquii',JSON.stringify(productToBePutInCart))
-
-        //     this.cart.push(productToBePutInCart);
-        //   }
-        // }
-        //console.log(this.selectedProduct)
-
-        let obj = this.getAllProducts.find(product => product.id == this.selectedProduct)
+        let obj = this.getAllProducts.find(
+          (product) => product.id == this.selectedProduct
+        );
 
         //console.log(obj)
 
-        if(obj) {
-          obj.quantidade = this.selectedProductQuantity
+        if (obj) {
+          obj.quantidade = this.selectedProductQuantity;
           //console.log('aqui',this.selectedProductQuantity)
-          this.cart.push(obj)
-          this.selectedProduct = {}
-          this.selectedProductQuantity = 0
+          this.cart.push(obj);
+          this.selectedProduct = {};
+          this.selectedProductQuantity = 0;
         }
-              
-        
         //console.log(this.cart)
       } catch (e) {
         console.log(e);
@@ -266,15 +233,11 @@ export default {
     },
 
     updateItem() {
-      //console.log(this.cart);
-      //console.log(this.selectedProduct)
-      //this.selectedProduct.quantidade = this.selectedProductQuantity
       let index = this.cart.findIndex(
         (product) => product.id == this.selectedProduct.id
       );
+
       this.cart[index].quantidade = this.newProductQuantityInCart;
-      //console.log(this.cart[index].id)
-      //console.log(this.cart[index].quantidade)
     },
 
     removeItemFromCart() {
@@ -282,7 +245,17 @@ export default {
         (product) => product.id == this.selectedProduct.id
       );
       this.cart.splice(index, 1);
-      //console.log(this.cart);
+    },
+
+    debouncedSetAllProducts: debounce(function(query) { //arrow function não funciona bem por causa do this dentro da função
+      this.setAllProducts(query);
+    }, 1000), // 1000ms de atraso
+
+    onSearchInput(query) {
+      //evento listener de v-autocomplete
+      this.searchQuery = query;
+      this.debouncedSetAllProducts(query)      
+      //this.setAllProducts(query)
     },
   },
 
@@ -296,29 +269,76 @@ export default {
       getAllProducts: "getAllProducts",
     }),
 
-    filteredProducts() {
-      return this.allProducts.filter((product) =>
-        product.nome.toLowerCase().includes(this.searchQuery.toLowerCase())
-      );
-    },
-
     orderTotalPrice() {
       let totalPrice = 0;
+
       this.cart.forEach((order) => {
         totalPrice += order.preco * order.quantidade;
       });
 
       return totalPrice;
     },
+
+    getFilteredProducts() {
+      if (!this.searchQuery?.trim()) {
+        return this.getAllProducts;
+      }
+
+      const queryKeywords = this.searchQuery
+        .toLowerCase()
+        .split(/\s+/) // Divide o termo de pesquisa por espaços em branco
+        .filter((word) => word.length > 0); // Remove palavras vazias
+
+      return this.getAllProducts.filter((product) => {
+        // Verifique se todas as palavras-chave aparecem no nome ou descrição
+         const matchesQuery = queryKeywords.every((keyword) => {
+          return (
+            product.personalizado.toLowerCase().includes(keyword) ||
+            product.descricao.toLowerCase().includes(keyword) || 
+            product.nome.toLowerCase().includes(keyword) 
+          );
+        });
+
+        return matchesQuery;
+      });
+    },
+ 
   },
 
   mounted() {
     this.setAllClients();
-    this.setAllProducts();
+    // params = null
+    
+    // if(params == null || params == '') {
+    //   this.setAllProducts();
+    // } else {
+    //   params = this.searchQuery
+      this.setAllProducts(this.searchQuery)
+    // }
   },
 
-  created() {},
+  created() {    
+  },
 
-  updated() {},
+  onMounted(){
+
+  },
+
+  beforeUpdate() {
+
+  },
+  
+  
+  //updated(params) {
+  updated() {
+    // params = null
+    
+    // if(params == null || params == '') {
+    //   this.setAllProducts();
+    // } else {
+    //   params = this.searchQuery
+    //   this.setAllProducts(params)
+    // }
+  },
 };
 </script>

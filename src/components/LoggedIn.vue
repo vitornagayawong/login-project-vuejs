@@ -1,5 +1,6 @@
 <template>
   <div>
+    <nav-component/>
     <v-app-bar
       absolute
       color="white"
@@ -12,6 +13,10 @@
 
       <router-link :to="{ name: 'ProductsComponent' }">
         <v-btn> Products </v-btn>
+      </router-link>
+
+      <router-link :to="{ name: 'OrdersComponent' }">
+        <v-btn> Orders </v-btn>
       </router-link>
 
       <router-link :to="{ name: 'PdvComponent' }">
@@ -41,8 +46,10 @@
 <script>
 import http from '@/axios';
 import { mapGetters, mapMutations, mapState } from 'vuex';
+import NavComponent from './NavComponent.vue';
 
 export default {
+  components: { NavComponent },
   name: "loggedIn",
 
   data: () => ({
@@ -58,7 +65,7 @@ export default {
     async logout() {
       try {
         const response = await http.post('logout')
-        console.log(response)
+        console.log('aqui',response)
         this.$router.push({ name: 'HomeComponent' })
 
       } catch (error) {

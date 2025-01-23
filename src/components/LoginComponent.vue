@@ -42,7 +42,9 @@ import { mapActions, mapMutations } from "vuex";
 //import http from '@/services/http'
 
 export default {
+
   name: "LoginComponent",
+  
   data: () => ({
     valid: true,
     // name: "",
@@ -57,6 +59,7 @@ export default {
     ],
     password: "",
   }),
+
   methods: {
   ...mapMutations({
     SET_TOKEN: 'SET_TOKEN'

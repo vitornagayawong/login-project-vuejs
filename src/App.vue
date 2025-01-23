@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <nav-component/>
+    <!-- <nav-component/> -->
     <v-main>
       <router-view></router-view>
     </v-main>
@@ -9,9 +9,9 @@
 
 <script>
 //import axios from 'axios';
-import NavComponent from './components/NavComponent.vue';
+//import NavComponent from './components/NavComponent.vue';
 export default {
-  components: { NavComponent },
+  //components: { NavComponent },
   name: "App",
 
   data: () => ({

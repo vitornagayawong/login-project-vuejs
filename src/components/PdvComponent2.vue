@@ -1,6 +1,6 @@
 <template>
   <div>
-    <v-container fluid>
+    <v-container>
       <v-row align="center">
         <v-col class="d-flex" cols="12" sm="6">
           <v-select
@@ -12,52 +12,56 @@
           ></v-select>
         </v-col>
       </v-row>
-    </v-container>   
+    </v-container>
 
-    <v-row>
-      <v-col cols="4">
-        <v-autocomplete
-          v-model="selectedProduct"
-          :items="getFilteredProducts"
-          item-text="personalizado"
-          item-value="id"
-          dense
-          filled
-          label="Product name"
-          :search-input="searchQuery"
-          @update:search-input="onSearchInput"
-          no-filter
-        ></v-autocomplete>
-      </v-col>
+    <!--  @update:search-input="onSearchInput" -->
+    <v-container>
+      <v-row>
+        <v-col cols="12">
+          <div class="d-flex justify-space-between">
+            <v-autocomplete
+              v-model="selectedProduct"
+              :items="getFilteredProducts"
+              item-text="personalizado"
+              item-value="id"
+              dense
+              filled
+              label="Product name"
+              :search-input="searchQuery"
+              @keyup="onSearchInput"
+              no-filter
+              class="mx-2"
+            ></v-autocomplete>
 
-      <v-col cols="4">
-        <v-text-field
-          label="Outlined"
-          placeholder="Quantity"
-          outlined
-          v-model="selectedProductQuantity"
-        ></v-text-field>
-      </v-col>
-
-      <v-col cols="4">
-        <v-btn @click="addToCart">Add to Cart</v-btn>
-      </v-col>
-    </v-row>
+            <v-text-field
+              label="Outlined"
+              placeholder="Quantity"
+              outlined
+              v-model="selectedProductQuantity"
+              class="mx-2"
+            ></v-text-field>
+            <v-btn @click="addToCart" class="mx-2">Add to Cart</v-btn>
+          </div>
+        </v-col>
+      </v-row>
+    </v-container>
 
     <br />
 
-    <v-data-table
-      :headers="headersCart"
-      :items="cart"
-      :items-per-page="5"
-      class="elevation-1"
-    >
-      <template v-slot:[`item.actions`]="{ item }">
-        <v-btn icon @click="openModalCart(item)">
-          <v-icon>mdi-eye</v-icon>
-        </v-btn>
-      </template>
-    </v-data-table>
+    <v-container class="pl-10 pr-10">
+      <v-data-table
+        :headers="headersCart"
+        :items="cart"
+        :items-per-page="5"
+        class="elevation-1"
+      >
+        <template v-slot:[`item.actions`]="{ item }">
+          <v-btn icon @click="openModalCart(item)">
+            <v-icon>mdi-eye</v-icon>
+          </v-btn>
+        </template>
+      </v-data-table>
+    </v-container>
 
     <v-dialog v-model="modalCart">
       <v-card>
@@ -97,7 +101,6 @@
     </v-container>
 
     <v-btn @click="finalizePurchase()">Finalize purchase</v-btn>
-    
   </div>
 </template>
 
@@ -217,15 +220,25 @@ export default {
           (product) => product.id == this.selectedProduct
         );
 
-        //console.log(obj)
+        //console.log(this.selectedProduct);
+        //console.log(obj);        
 
         if (obj) {
-          obj.quantidade = this.selectedProductQuantity;
-          //console.log('aqui',this.selectedProductQuantity)
-          this.cart.push(obj);
+
+          let productAlreadyInCart = this.cart.find(p => p.id === obj.id)
+          
+          if(productAlreadyInCart) {
+            productAlreadyInCart.quantidade += Number(this.selectedProductQuantity)
+          } else {
+            obj.quantidade = Number(this.selectedProductQuantity)
+            this.cart.push(obj)
+          }
+          // obj.quantidade = this.selectedProductQuantity;
+          // //console.log('aqui',this.selectedProductQuantity)
+          // this.cart.push(obj);
           this.selectedProduct = {};
           this.selectedProductQuantity = 0;
-        }
+        }       
         //console.log(this.cart)
       } catch (e) {
         console.log(e);
@@ -247,14 +260,17 @@ export default {
       this.cart.splice(index, 1);
     },
 
-    debouncedSetAllProducts: debounce(function(query) { //arrow function não funciona bem por causa do this dentro da função
+    debouncedSetAllProducts: debounce(function (query) {
+      //arrow function não funciona bem por causa do this dentro da função
       this.setAllProducts(query);
     }, 1000), // 1000ms de atraso
 
     onSearchInput(query) {
       //evento listener de v-autocomplete
-      this.searchQuery = query;
-      this.debouncedSetAllProducts(query)      
+
+      console.log('aaaa',query)
+      this.searchQuery = query.target.value;
+      this.debouncedSetAllProducts(this.searchQuery);
       //this.setAllProducts(query)
     },
   },
@@ -291,48 +307,40 @@ export default {
 
       return this.getAllProducts.filter((product) => {
         // Verifique se todas as palavras-chave aparecem no nome ou descrição
-         const matchesQuery = queryKeywords.every((keyword) => {
+        const matchesQuery = queryKeywords.every((keyword) => {
           return (
             product.personalizado.toLowerCase().includes(keyword) ||
-            product.descricao.toLowerCase().includes(keyword) || 
-            product.nome.toLowerCase().includes(keyword) 
+            product.descricao.toLowerCase().includes(keyword) ||
+            product.nome.toLowerCase().includes(keyword)
           );
         });
 
         return matchesQuery;
       });
     },
- 
   },
 
   mounted() {
     this.setAllClients();
     // params = null
-    
+
     // if(params == null || params == '') {
     //   this.setAllProducts();
     // } else {
     //   params = this.searchQuery
-      this.setAllProducts(this.searchQuery)
+    this.setAllProducts(this.searchQuery);
     // }
   },
 
-  created() {    
-  },
+  created() {},
 
-  onMounted(){
+  onMounted() {},
 
-  },
+  beforeUpdate() {},
 
-  beforeUpdate() {
-
-  },
-  
-  
   //updated(params) {
   updated() {
     // params = null
-    
     // if(params == null || params == '') {
     //   this.setAllProducts();
     // } else {

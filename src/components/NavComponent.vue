@@ -1,6 +1,6 @@
 <template>
   
-    <v-navigation-drawer app color="blue" permanent>
+    <v-navigation-drawer app color="blue" >
       <v-list-item>
         <v-list-item-content>
           <v-list-item-title class="text-h6"> Application </v-list-item-title>
@@ -31,8 +31,13 @@ export default {
   data() {
     return {
       items: [
-        { title: "About", icon: "mdi-image", route: "/about" },
-        { title: "LoggedIn", icon: "mdi-image", route: "/loggedin" },
+        { title: "About", icon: "mdi-information", route: "/about" },
+        { title: "LoggedIn", icon: "mdi-account", route: "/loggedin" },
+        { title: "Products", icon: "mdi-shopping", route: "/products" },
+        { title: "Orders", icon: "mdi-truck-fast", route: "/orders" },
+        { title: "Pdv1", icon: "mdi-cash-multiple", route: "/pdv" },
+        { title: "Pdv2", icon: "mdi-cash-multiple", route: "/pdv2" },
+        { title: "Client", icon: "mdi-human", route: "/client" },
       ],
     };
   },

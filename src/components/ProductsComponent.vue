@@ -1,118 +1,144 @@
 <template>
   <div>
-    <v-data-table
-      :headers="headers"
-      :items="getAllProducts"
-      :page.sync="page"
-      :items-per-page="itemsPerPage"
-      hide-default-footer
-      class="elevation-1"
-      @page-count="pageCount = $event"
-    >
-      <template v-slot:[`item.actions`]="{ item }">
-        <v-btn icon @click="openModal(item)">
-          <v-icon>mdi-pencil</v-icon>
-        </v-btn>
-      </template>
+    <v-row>
+      <v-col :cols="12" :xs="10" :sm="9" :md="7" :lg="6" class="mx-auto">
+        <v-data-table
+          :headers="headers"
+          :items="getAllProducts"
+          :page.sync="page"
+          :items-per-page="itemsPerPage"
+          hide-default-footer
+          class="elevation-1"
+          @page-count="pageCount = $event"
+        >
+          <template v-slot:[`item.actions`]="{ item }">
+            <v-btn icon @click="openModal(item)">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
+          </template>
+        </v-data-table>
 
-    </v-data-table>
-
-    <div class="text-center pt-2">
-      <v-pagination
-        v-model="page"
-        :length="getPagination.last"
-        @input="receivePaginate"
-      ></v-pagination>
-      <v-text-field
-        :value="itemsPerPage"
-        label="Items per page"
-        type="number"
-        min="-1"
-        max="15"
-        @input="itemsPerPage = parseInt($event, 10)"
-      ></v-text-field>
-    </div>
+        <div class="text-center pt-2">
+          <v-pagination
+            v-model="page"
+            :length="getPagination.last"
+            @input="receivePaginate"
+          ></v-pagination>
+          <v-text-field
+            :value="itemsPerPage"
+            label="Items per page"
+            type="number"
+            min="-1"
+            max="15"
+            @input="itemsPerPage = parseInt($event, 10)"
+          ></v-text-field>
+        </div>
+      </v-col>
+    </v-row>
 
     <v-dialog v-model="modal">
-      <v-card>
-        <v-card-title>
-          <span class="headline">Detalhes do Produto</span>
-        </v-card-title>
+      <v-row>
+        <v-col>
+          <v-card>
+            <v-card-title>
+              <span class="headline">Detalhes do Produto</span>
+            </v-card-title>
 
-        <!-- <v-data-table
-          dense
-          :headers="headersModal"
-          :items="selectedItem"
-          item-key="id"
-          class="elevation-1"
-        ></v-data-table> -->
+            <!-- <v-data-table
+            dense
+            :headers="headersModal"
+            :items="selectedItem"
+            item-key="id"
+            class="elevation-1"
+          ></v-data-table> -->
 
-        <v-text-field v-for="(item, index) in fieldsArray" :key="index" :label="item.label" :placeholder="item.placeholder" v-model="selectedItem[item.model]"></v-text-field> <!--algumaCoisa[] o colchetes se refere ao atributo em js-->
-         
-        <v-card-actions>
-          <v-btn text @click="closeModal">Fechar</v-btn>
-        </v-card-actions>
-      </v-card>
+            <v-text-field
+              v-for="(item, index) in fieldsArray"
+              :key="index"
+              :label="item.label"
+              :placeholder="item.placeholder"
+              v-model="selectedItem[item.model]"
+              disabled
+            ></v-text-field>
+            <!--algumaCoisa[] o colchetes se refere ao atributo em js-->
+
+            <v-card-actions>
+              <v-btn text @click="closeModal">Fechar</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+      </v-row>
     </v-dialog>
 
-    <v-form ref="form" v-model="valid" lazy-validation class="size">
-      <h1>Register Product</h1>
-      <v-text-field
-        v-model="product.name"
-        :counter="10"
-        :rules="nameRules"
-        label="Name"
-        required
-      ></v-text-field>
+    
 
-      <v-text-field
-        v-model="product.description"
-        :rules="descriptionRules"
-        label="Description"
-        required
-      ></v-text-field>
+    <v-row>
+      <v-col cols="12">
+        <v-form ref="form" v-model="valid" lazy-validation class="size">
+          <h1>Register Product</h1>
+          <v-text-field
+            v-model="product.name"
+            :counter="10"
+            :rules="nameRules"
+            label="Name"
+            required
+          ></v-text-field>
 
-      <v-text-field
-        v-model="product.price"
-        :rules="priceRules"
-        label="Price"
-        required
-      ></v-text-field>
+          <v-text-field
+            v-model="product.description"
+            :rules="descriptionRules"
+            label="Description"
+            required
+          ></v-text-field>
 
-      <v-text-field
-        v-model="product.weight"
-        :rules="weightRules"
-        label="Weight"
-        required
-      ></v-text-field>
+          <v-text-field
+            v-model="product.price"
+            :rules="priceRules"
+            label="Price"
+            required
+          ></v-text-field>
 
-      <v-text-field
-        v-model="product.height"
-        :rules="heightRules"
-        label="Height"
-        required
-      ></v-text-field>
+          <v-text-field
+            v-model="product.weight"
+            :rules="weightRules"
+            label="Weight"
+            required
+          ></v-text-field>
 
-      <v-text-field
-        v-model="product.storage"
-        :rules="storagetRules"
-        label="Storage quantity"
-        required
-      ></v-text-field>
+          <v-text-field
+            v-model="product.height"
+            :rules="heightRules"
+            label="Height"
+            required
+          ></v-text-field>
 
-      <v-checkbox
-        v-model="checkbox"
-        :rules="[(v) => !!v || 'You must agree to continue!']"
-        label="Do you agree?"
-        required
-      ></v-checkbox>
+          <v-text-field
+            v-model="product.storage"
+            :rules="storagetRules"
+            label="Storage quantity"
+            required
+          ></v-text-field>
 
-      <v-btn :disabled="!valid" color="success" class="mr-4" @click="validate">
-        Validate
-      </v-btn>
+          <v-checkbox
+            v-model="checkbox"
+            :rules="[(v) => !!v || 'You must agree to continue!']"
+            label="Do you agree?"
+            required
+          ></v-checkbox>
 
-      <v-btn color="error" class="mr-4" @click="reset"> Reset Form </v-btn>
-    </v-form>
+          <v-btn
+            :disabled="!valid"
+            color="success"
+            class="mr-4"
+            @click="validate"
+          >
+            Validate
+          </v-btn>
+
+          <v-btn color="error" class="mr-4" @click="reset"> Reset Form </v-btn>
+        </v-form>
+      </v-col>
+    </v-row>
   </div>
 </template>
 
@@ -125,7 +151,7 @@ export default {
 
   data: () => ({
     fieldsArray: [
-      { label: 'Product Name', model: 'nome', placeholder: 'nome'},
+      { label: "Product Name", model: "nome", placeholder: "nome" },
     ],
     selectedItem: {},
     modal: false,
@@ -148,18 +174,18 @@ export default {
     ],
 
     headersModal: [
-        {
-          text: 'Name',
-          align: 'start',
-          sortable: false,
-          value: 'nome',
-        },
-        { text: 'Description', value: 'descricao' },
-        { text: 'Price', value: 'preco' },
-        { text: 'Weight', value: 'peso' },
-        { text: 'Height', value: 'altura' },
-        { text: 'Storage', value: 'estoque' },
-      ],
+      {
+        text: "Name",
+        align: "start",
+        sortable: false,
+        value: "nome",
+      },
+      { text: "Description", value: "descricao" },
+      { text: "Price", value: "preco" },
+      { text: "Weight", value: "peso" },
+      { text: "Height", value: "altura" },
+      { text: "Storage", value: "estoque" },
+    ],
 
     valid: true,
 
@@ -206,19 +232,18 @@ export default {
 
   methods: {
     async openModal(item) {
-
       //console.log('item',item)
-      this.modal = true
+      this.modal = true;
 
-      const response = await http.get(`produtos/${item.id}`)
+      const response = await http.get(`produtos/${item.id}`);
 
-      console.log(response.data[0])
+      console.log(response.data[0]);
 
-      this.selectedItem = response.data[0]
+      this.selectedItem = response.data[0];
     },
-    
+
     closeModal() {
-      this.modal = false
+      this.modal = false;
     },
 
     async receivePaginate(event) {

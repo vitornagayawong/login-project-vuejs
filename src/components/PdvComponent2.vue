@@ -2,23 +2,25 @@
   <div>
     <v-container>
       <v-row align="center">
-        <v-col class="d-flex" cols="12" sm="6">
+        <v-col class="d-flex" cols="12" sm="6  cliente">
           <v-select
             label="Select a Client"
             :items="getAllClients"
             item-text="nome"
             item-value="id"
             v-model="selectedClient"
+            :rules="clientRules"
+            class="ml-2"
           ></v-select>
         </v-col>
       </v-row>
     </v-container>
 
     <!--  @update:search-input="onSearchInput" -->
-    <v-container>
-      <v-row>
-        <v-col cols="12">
-          <div class="d-flex justify-space-between">
+    <v-container >
+      <v-row align="center" justify="center">
+        <v-col cols="12" d-flex>
+          <div class="produtos">
             <v-autocomplete
               v-model="selectedProduct"
               :items="getFilteredProducts"
@@ -30,17 +32,22 @@
               :search-input="searchQuery"
               @keyup="onSearchInput"
               no-filter
-              class="mx-2"
+              class="mx-2 productName"
+              color="purple"
+              :rules="productRules"
             ></v-autocomplete>
 
             <v-text-field
-              label="Outlined"
+              label="Quantity"
               placeholder="Quantity"
               outlined
               v-model="selectedProductQuantity"
-              class="mx-2"
+              class="mx-2 "
             ></v-text-field>
-            <v-btn @click="addToCart" class="mx-2">Add to Cart</v-btn>
+
+            <v-btn @click="addToCart" class="mx-2 mb-7" color="blue">
+              Add to Cart
+            </v-btn>
           </div>
         </v-col>
       </v-row>
@@ -48,16 +55,16 @@
 
     <br />
 
-    <v-container class="pl-10 pr-10">
+    <v-container class="pl-10 pr-10" d-flex justify-center>
       <v-data-table
         :headers="headersCart"
         :items="cart"
         :items-per-page="5"
-        class="elevation-1"
+        class="elevation-3 cart"
       >
         <template v-slot:[`item.actions`]="{ item }">
           <v-btn icon @click="openModalCart(item)">
-            <v-icon>mdi-eye</v-icon>
+            <v-icon>mdi-pencil</v-icon>
           </v-btn>
         </template>
       </v-data-table>
@@ -86,21 +93,100 @@
 
     <br />
 
-    <v-container fluid>
-      <v-row align="center">
-        <v-col class="d-flex" cols="12" sm="6">
+    <v-container fluid d-flex justify-center>
+      <v-row align="center" d-flex class="pr-10 pl-10 pagamentoEPreco" justify-center>
+        <v-col class="d-flex">
           <v-select
             label="Select a type of payment"
             :items="typesPayment"
             item-text="description"
             item-value="description"
             v-model="selectedTypeOfPayment"
+            :rules="typeOfPaymentRules"
+            class="tipoPagamento"
           ></v-select>
+        </v-col>
+
+        <v-col>
+          <v-text-field
+            label="Total Price (R$)"
+            outlined
+            v-model="orderTotalPrice"
+            disabled
+            class="precoTotal"
+          ></v-text-field>
+          <!-- <total-price
+            :orderTotalPrice="orderTotalPrice"
+          /> -->
+
         </v-col>
       </v-row>
     </v-container>
 
-    <v-btn @click="finalizePurchase()">Finalize purchase</v-btn>
+    <v-btn @click="openDialogFinalizePurchase()" class="finalizarCompra green darken-1">Finalize purchase</v-btn>
+
+    <v-dialog
+      v-model="dialogFinalizePurchase"
+      persistent
+      max-width="290"
+    >
+      <v-card>
+        <v-card-title class="text-h5">
+          Confirm Purchase
+        </v-card-title>
+        <v-card-text>Are you sure you want to finalize this purchase?</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="red darken-1"
+            text
+            @click="dialogFinalizePurchase = false"
+          >
+            Disagree
+          </v-btn>
+          <v-btn
+            color="green darken-1"
+            text
+            @click="finalizePurchase()"
+          >
+            Agree
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog
+        transition="dialog-top-transition"
+        max-width="600"
+        v-model="dialogInvoice"
+      >
+        <template>
+          <v-card>
+            <v-toolbar
+              color="primary"
+              dark
+            >INVOICE</v-toolbar>
+            <v-row>
+              <v-col>Name</v-col>
+              <v-col>Quantity</v-col>
+              <v-col>Price</v-col>
+            </v-row>
+            <v-row v-for="(product, index) in cart" :key="index">
+              <v-col>{{ product.nome }}</v-col>
+              <v-col>{{ product.quantidade }}</v-col>
+              <v-col>{{ product.quantidade * product.preco }}</v-col>
+            </v-row>
+            <v-card-text>Total Price: {{ orderTotalPrice }}</v-card-text>
+            <v-card-actions class="justify-end">
+              <v-btn
+                text
+                @click="closeDialogInvoice"
+              >Close</v-btn>
+            </v-card-actions>
+          </v-card>
+        </template>
+      </v-dialog>
+
   </div>
 </template>
 
@@ -108,12 +194,28 @@
 import http from "@/axios";
 import { mapActions, mapGetters, mapState } from "vuex";
 import { debounce } from "lodash";
+//import TotalPrice from "./TotalPrice.vue";
 
 export default {
+  //components: { TotalPrice },
   name: "PdvComponent2",
 
   data() {
     return {
+      precoComPonto: '',
+      dialogInvoice: false,
+      clientRules: [
+        (client) => !!client || 'Select a client!'
+      ],
+      productRules: [
+        (product) => !!product || 'Insert a product!',
+        //(product) => (product && product.id) || 'Invalid product selected!',
+      ],
+      typeOfPaymentRules: [
+        (payment) => !!payment || 'Choose a payment!',
+      ],
+      dialogFinalizePurchase: false,
+      totalPrice: 0,
       value: null,
       selectedClient: "",
       searchQuery: "",
@@ -123,7 +225,7 @@ export default {
       modal: false,
       modalCart: false,
       selectedProduct: {},
-      selectedProductQuantity: 0,
+      selectedProductQuantity: 1,
       newProductQuantityInCart: 0,
       selectedTypeOfPayment: "",
       typesPayment: [
@@ -163,7 +265,15 @@ export default {
     };
   },
 
-  methods: {
+  // watch: {
+  //   orderTotalPrice() {
+  //     // A cada mudança no preço total, converte e emite o valor com ponto
+  //     //this.precoComPonto = newValue.replace(",", ".");
+  //   },
+  // },
+
+  methods: {    
+
     ...mapActions({
       setAllClients: "setAllClients",
       setAllProducts: "setAllProducts",
@@ -186,6 +296,8 @@ export default {
 
     async finalizePurchase() {
       try {
+        
+
         const date = new Date();
         const day = date.getDate();
         let month = date.getMonth() + 1;
@@ -197,21 +309,67 @@ export default {
 
         const fullDate = year + "-" + month + "-" + day;
 
-        console.log(this.selectedTypeOfPayment);
-
         const payload = {
           cliente_id: this.selectedClient,
           data: fullDate,
-          valor_total: this.orderTotalPrice,
+          valor_total: this.totalPrice,
           forma_pgt: this.selectedTypeOfPayment,
           produtos: this.cart,
-        };
+        };        
 
         const response = await http.post("pedidos", payload);
-        console.log(response);
+        //console.log('aaaaaaaaaa',response);
+
+        if(response.data.response === null) {
+          window.alert('Fill all the required fields!')
+          this.dialogFinalizePurchase = false
+        }
+
+        if(response.data.error) {
+          window.alert(response.data.error)
+          //this.dialogFinalizePurchase = false
+        }
+
+        if(response.data.error == 'Quantidade requisitada do(a) cadeira madeira verde maior que a do estoque!') {
+          let cadeiraMadeiraVerde = this.cart.find(produto => produto.nome == 'cadeira madeira verde')          
+          //console.log('aquii',cadeiraMadeiraVerde)
+          let qtdCadeiraMadeiraVerdeNoCarrinho = cadeiraMadeiraVerde.quantidade
+
+          //console.log('qtdCadeiraMadeiraVerdeNoCarrinho', qtdCadeiraMadeiraVerdeNoCarrinho)
+
+          let idCadeiraMadeiraVerdeNoCarrinho = this.cart.findIndex(produto => produto.nome == 'cadeira madeira verde')
+          //console.log('idCadeiraMadeiraVerdeNoCarrinho', idCadeiraMadeiraVerdeNoCarrinho)
+
+          this.cart.splice(idCadeiraMadeiraVerdeNoCarrinho, 1)
+
+          //console.log('carrinho', this.cart)
+
+          this.totalPrice -= qtdCadeiraMadeiraVerdeNoCarrinho * cadeiraMadeiraVerde.preco
+
+
+        }
+
+        if(response.statusText == 'Created') {
+          this.dialogInvoice = true
+        }
+
       } catch (e) {
         console.log(e);
       }
+    },
+
+    openDialogFinalizePurchase() {
+      if(!this.selectedClient || !this.cart || !this.selectedTypeOfPayment) {
+          window.alert('Fill all the required fields')
+      } else {
+        this.dialogFinalizePurchase = true
+      }
+
+    },
+    
+    closeDialogInvoice() {
+      this.dialogFinalizePurchase = false
+      this.dialogInvoice = false
     },
 
     addToCart() {
@@ -229,13 +387,31 @@ export default {
           
           if(productAlreadyInCart) {
             productAlreadyInCart.quantidade += Number(this.selectedProductQuantity)
+            console.log('kk',productAlreadyInCart)
+            console.log('antes', this.totalPrice)
+            this.totalPrice += this.selectedProductQuantity * productAlreadyInCart.preco
+            console.log('depois', this.totalPrice)
+            //this.totalPrice.toFixed(2)
           } else {
             obj.quantidade = Number(this.selectedProductQuantity)
             this.cart.push(obj)
+            //console.log('aqui', obj)
+            this.totalPrice += obj.quantidade * obj.preco
+            
           }
           // obj.quantidade = this.selectedProductQuantity;
           // //console.log('aqui',this.selectedProductQuantity)
           // this.cart.push(obj);
+
+          // if(this.cart.length > 0) {
+          //   this.cart.reduce((anterior, atual) => {
+          //     //this.totalPrice += Number(anterior.preco)
+          //     this.totalPrice += Number(atual.preco)
+          //   }, 0)
+          // } else {
+            
+          // }
+
           this.selectedProduct = {};
           this.selectedProductQuantity = 0;
         }       
@@ -286,13 +462,24 @@ export default {
     }),
 
     orderTotalPrice() {
-      let totalPrice = 0;
+      // let totalPrice = 0;
 
-      this.cart.forEach((order) => {
-        totalPrice += order.preco * order.quantidade;
+      // console.log('antes carrinho', totalPrice)
+      // this.cart.forEach((order) => {
+      //   console.log('orderrr', order)
+      //   totalPrice += order.preco * order.quantidade;
+      // });
+      // console.log('depois carrinho', totalPrice)
+      //console.log('tp', totalPrice)
+      
+      //totalPrice = totalPrice.toFixed(2).replace('.', ',')
+
+      //console.log('tp', totalPrice)
+      
+      return this.totalPrice.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
       });
-
-      return totalPrice;
     },
 
     getFilteredProducts() {
@@ -350,3 +537,66 @@ export default {
   },
 };
 </script>
+
+<style >
+  
+  .produtos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 80.5%;
+    /* border: 1px solid red */
+    margin: auto;
+    margin-top: 10px;
+  }
+  
+  .pagamentoEPreco {
+    max-width: 50%;
+    /* border: 1px solid red */
+  }
+  
+  .tipoPagamento {
+    width: 20px;
+    max-width: 300px;   
+    /* border: 1px solid red */    
+  }
+  
+  .precoTotal {
+    width: 3000px;
+    max-width: 300px;
+    /* border: 1px solid red */
+  }
+
+  .finalizarCompra {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+  }
+
+  .cart {
+    width: 82%;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    height: 400px;
+  }
+
+  .cart th {
+    background-color: #a269f1;
+    color: white;
+    font-weight: bold;
+  }
+
+  .v-icon__content {
+    background-color: green;
+  }  
+
+  .cliente {
+    margin-left: 170px;
+    max-width: 20%;
+    margin-top: 50px;
+  }
+
+  .productName {
+    width: 100%;
+  }
+</style>

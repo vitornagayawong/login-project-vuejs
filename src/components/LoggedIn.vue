@@ -12,10 +12,10 @@
         <v-container d-flex align-center>
         <h1 class="text-subtitle-1">Welcome: {{ getAvatarName }}</h1>
         <v-spacer></v-spacer>
-          <v-menu offset-y v-if="$vuetify.breakpoint.xs">
+          <v-menu offset-y v-if="$vuetify.breakpoint.mdAndDown">
             <template v-slot:activator="{ on, attrs }">
               <v-btn  color="primary" dark v-bind="attrs" v-on="on">
-                Dropdown
+                Menu
               </v-btn>
             </template>
             <v-list>

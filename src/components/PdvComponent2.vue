@@ -12,6 +12,8 @@
             :rules="clientRules"
             class="ml-2"
             autofocus
+            :error="!selectedClient"
+            :error-messages="!selectedClient ? 'Select an existing client!' : ''"
           ></v-select>
         </v-col>
       </v-row>
@@ -31,6 +33,7 @@
               filled
               label="Product name"
               :search-input="searchQuery"
+              @keydown.enter="pressEnterKey"
               @keyup="onSearchInput"
               no-filter
               class="mx-2 productName"
@@ -63,6 +66,7 @@
         :items="cart"
         :items-per-page="5"
         class="elevation-3 cart"
+        no-data-text="No itens choosen yet"
       >
         <template v-slot:[`item.actions`]="{ item }">
           <v-btn icon @click="openModalCart(item)">
@@ -71,7 +75,15 @@
           <v-btn icon @click="removeItemFromCart(item)">
             <v-icon>mdi-trash-can</v-icon>
           </v-btn>
-        </template>       
+        </template>      
+        
+        <template v-slot:[`item.preco`]="{ item }">
+          <span>{{ item.preco.toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL'
+            }) }}
+          </span>
+        </template>
       </v-data-table>
     </v-container>
 
@@ -81,13 +93,19 @@
           <span class="headline">Detalhes do Produto no Carrinho</span>
         </v-card-title>
 
-        <p id="qtdProdCarrinho">Qtd Prod: {{ selectedProduct.quantidade }}</p>
+        <p id="qtdProdCarrinho">Qtd Prod: {{ newProductQuantityInCart }}</p>
 
-        <v-text-field
-          label="Input a new desired quantity"
-          v-model="newProductQuantityInCart"
-          class="newDesiredQuantity"
-        ></v-text-field>
+        <div class="d-flex align-center">
+          <v-text-field
+            label="Input a new desired quantity"
+            v-model="newProductQuantityInCart"
+            class="newDesiredQuantity"
+          ></v-text-field>
+
+          <v-btn class="mx-3 red lighten-2" @click="subtractNewProductQuantityInCart">(-)</v-btn>
+          <v-btn class="green lighten-2" @click="addNewProductQuantityInCart">(+)</v-btn>
+
+        </div>
 
         <v-card-actions>
           <v-btn text @click="closeModal">Fechar</v-btn>
@@ -117,6 +135,8 @@
             v-model="selectedTypeOfPayment"
             :rules="typeOfPaymentRules"
             class="tipoPagamento"
+            :error="!selectedTypeOfPayment"
+            :error-messages="!selectedTypeOfPayment ? 'Select an existing type of payment' : ''"
           ></v-select>
         </v-col>
 
@@ -181,7 +201,7 @@
             <v-col>{{ product.quantidade }}</v-col>
             <v-col>{{ product.quantidade * product.preco }}</v-col>
           </v-row>
-          <v-card-text>Total Price: {{ orderTotalPrice }}</v-card-text>
+          <v-card-text>Total Price: {{ totalPriceComputed }}</v-card-text>
           <v-card-actions class="justify-end">
             <v-btn text @click="closeDialogInvoice">Close</v-btn>
           </v-card-actions>
@@ -205,7 +225,9 @@ export default {
     return {
       precoComPonto: "",
       dialogInvoice: false,
-      clientRules: [(client) => !!client || "Select a client!"],
+      clientRules: [
+        (client) => !!client || "Select a client!", 
+      ],
       productRules: [
         (product) => !!product || "Insert a product!",
         //(product) => (product && product.id) || 'Invalid product selected!',
@@ -215,7 +237,7 @@ export default {
         (selectedProductQuantity) => typeof(selectedProductQuantity) != Number || 'This must be numeric!'
       ],
       dialogFinalizePurchase: false,
-      totalPrice: 0,
+      //totalPrice: 0,
       value: null,
       selectedClient: "",
       searchQuery: "",
@@ -253,9 +275,10 @@ export default {
           align: "start",
           sortable: false,
           value: "nome",
+        
         },
         { text: "Description", value: "descricao" },
-        { text: "Price", value: "preco" },
+        { text: "Price", value: "preco", width: '100px' },
         { text: "Weight", value: "peso" },
         { text: "Height", value: "altura" },
         { text: "Quantity", value: "quantidade" },
@@ -264,13 +287,6 @@ export default {
       filterProducts: [],
     };
   },
-
-  // watch: {
-  //   orderTotalPrice() {
-  //     // A cada mudança no preço total, converte e emite o valor com ponto
-  //     //this.precoComPonto = newValue.replace(",", ".");
-  //   },
-  // },
 
   methods: {
     ...mapActions({
@@ -306,16 +322,20 @@ export default {
 
         const fullDate = year + "-" + month + "-" + day;
 
+        //console.log('preço com pponto', this.totalPriceComputedDot)
+
         const payload = {
           cliente_id: this.selectedClient,
           data: fullDate,
-          valor_total: this.totalPrice,
+          valor_total: this.totalPriceComputedDot,
           forma_pgt: this.selectedTypeOfPayment,
           produtos: this.cart,
         };
 
         const response = await http.post("pedidos", payload);
-        //console.log('aaaaaaaaaa',response);
+
+        //console.log('response', response)
+
 
         if (response.data.response === null) {
           window.alert("Fill all the required fields!");
@@ -327,30 +347,26 @@ export default {
           //this.dialogFinalizePurchase = false
         }
 
-        if (
-          response.data.error ==
-          "Quantidade requisitada do(a) cadeira madeira verde maior que a do estoque!"
-        ) {
-          let cadeiraMadeiraVerde = this.cart.find(
-            (produto) => produto.nome == "cadeira madeira verde"
-          );
-          //console.log('aquii',cadeiraMadeiraVerde)
-          let qtdCadeiraMadeiraVerdeNoCarrinho = cadeiraMadeiraVerde.quantidade;
+        // if (
+        //   response.data.error ==
+        //   "Quantidade requisitada do(a) cadeira madeira verde maior que a do estoque!"
+        // ) {
+          // let cadeiraMadeiraVerde = this.cart.find(
+          //   (produto) => produto.nome == "cadeira madeira verde"
+          // );
+          //let qtdCadeiraMadeiraVerdeNoCarrinho = cadeiraMadeiraVerde.quantidade;
 
-          //console.log('qtdCadeiraMadeiraVerdeNoCarrinho', qtdCadeiraMadeiraVerdeNoCarrinho)
 
-          let idCadeiraMadeiraVerdeNoCarrinho = this.cart.findIndex(
-            (produto) => produto.nome == "cadeira madeira verde"
-          );
-          //console.log('idCadeiraMadeiraVerdeNoCarrinho', idCadeiraMadeiraVerdeNoCarrinho)
+        //   let idCadeiraMadeiraVerdeNoCarrinho = this.cart.findIndex(
+        //     (produto) => produto.nome == "cadeira madeira verde"
+        //   );
 
-          this.cart.splice(idCadeiraMadeiraVerdeNoCarrinho, 1);
+        //   this.cart.splice(idCadeiraMadeiraVerdeNoCarrinho, 1);//console.log('carrinho', this.cart)
 
-          //console.log('carrinho', this.cart)
+        //   this.totalPrice -= qtdCadeiraMadeiraVerdeNoCarrinho * cadeiraMadeiraVerde.preco;
+        // }
 
-          this.totalPrice -=
-            qtdCadeiraMadeiraVerdeNoCarrinho * cadeiraMadeiraVerde.preco;
-        }
+        //console.log('response aqui', response)
 
         if (response.statusText == "Created") {
           this.dialogInvoice = true;
@@ -361,8 +377,12 @@ export default {
     },
 
     openDialogFinalizePurchase() {
-      if (!this.selectedClient || !this.cart || !this.selectedTypeOfPayment) {
-        window.alert("Fill all the required fields");
+      if (!this.selectedClient) {
+        window.alert("Select a client to proceed!");
+      } else if(this.cart.length == 0) {
+        window.alert("Your cart is empty yet! Choose an item to proceed!");
+      } else if(!this.selectedTypeOfPayment) {
+        window.alert("Select a type of payment to proceed!");
       } else {
         this.dialogFinalizePurchase = true;
       }
@@ -375,38 +395,52 @@ export default {
 
     addToCart() {
       try {
+       
         let prod = this.getAllProducts.find(
           (product) => product.id == this.selectedProduct
         );
 
-        //console.log('prodddd', prod)
-
-        //console.log(this.selectedProduct);
-
         if (this.selectedProductQuantity == 0) {
           window.alert("Quantity has to be more than zero!");
+          this.selectedProductQuantity = 1
         } else if (this.selectedProductQuantity > prod.estoque) {
           window.alert(`We don't have this quantity in our storage, sorry! Now it's available only ${prod.estoque} units!`);
           this.selectedProductQuantity = 1
         } else {
           if (prod) {
             let productAlreadyInCart = this.cart.find((p) => p.id === prod.id);
+            let producIndextAlreadyInCart = this.cart.findIndex((p) => p.id === prod.id);
 
             if (productAlreadyInCart) {
-              productAlreadyInCart.quantidade += Number(
-                this.selectedProductQuantity
-              );
-              //console.log('kk',productAlreadyInCart)
-              //console.log('antes', this.totalPrice)
-              this.totalPrice +=
-                this.selectedProductQuantity * productAlreadyInCart.preco;
-              //console.log('depois', this.totalPrice)
-              //this.totalPrice.toFixed(2)
+              // productAlreadyInCart.quantidade += Number(
+              //   this.selectedProductQuantity
+
+              //console.log(productAlreadyInCart)
+              //console.log('index', producIndextAlreadyInCart)
+              //console.log('cartt',this.cart)
+
+              this.cart = this.cart.map(p => {    //esse map retorna um novo array mapeado, por isso vc precisa atribuir esse novo array ao this.cart original   
+                if(p.id == this.cart[producIndextAlreadyInCart].id) {
+                    p.quantidade += this.selectedProductQuantity
+                }
+                return p //não esquecer o return devido à chave
+              })
+
+              // );
+              // productAlreadyInCart = { 
+              //   ...productAlreadyInCart, quantidade: productAlreadyInCart.quantidade + Number(this.selectedProductQuantity) }
+              
+             // this.totalPrice += this.selectedProductQuantity * productAlreadyInCart.preco;
+              
+             //this.totalPrice.toFixed(2)           
+             //console.log('aquiiiiiiiiyuyuyy')   
+              
             } else {
+              //console.log('caiu quii')
               prod.quantidade = Number(this.selectedProductQuantity);
               this.cart.push(prod);
               //console.log('aqui', obj)
-              this.totalPrice += prod.quantidade * prod.preco;
+             //this.totalPrice += prod.quantidade * prod.preco;
             }
             // obj.quantidade = this.selectedProductQuantity;
             // //console.log('aqui',this.selectedProductQuantity)
@@ -423,10 +457,9 @@ export default {
 
             this.selectedProduct = {};
             this.selectedProductQuantity = 1;
-          }
-          //console.log(this.cart)
+          }          
         }
-        //console.log(obj);
+        
       } catch (e) {
         console.log(e);
       }
@@ -437,17 +470,24 @@ export default {
         (product) => product.id == this.selectedProduct.id
       );
 
-      let setedQuantityInCart = this.cart[choosenProductIndex].quantidade;
+      //console.log('choosenProductIndex', choosenProductIndex)
+      //console.log('newProductQuantityInCart', this.newProductQuantityInCart)
 
-      //console.log('opa',setedQuantityInCart)
+      //let setedQuantityInCart = this.cart[choosenProductIndex].quantidade;
 
-      //console.log(this.cart)
+      this.cart = this.cart.map(p => {
+        if(p.id == this.cart[choosenProductIndex].id) {
+          p.quantidade = this.newProductQuantityInCart
+        }
+        return p
+      }
+    )
 
-      this.cart[choosenProductIndex].quantidade = this.newProductQuantityInCart;
+      //this.cart[choosenProductIndex].quantidade = this.newProductQuantityInCart;
 
-      this.totalPrice +=
-        (this.newProductQuantityInCart - setedQuantityInCart) *
-        this.cart[choosenProductIndex].preco;
+      // this.totalPrice +=
+      //   (this.newProductQuantityInCart - setedQuantityInCart) *
+      //   this.cart[choosenProductIndex].preco;
     },
 
     removeItemFromCart(product) { 
@@ -459,53 +499,30 @@ export default {
           return p.id != product.id
         })
 
-        //console.log(allProductsExceptTheChoosenOne)
-
         this.cart = allProductsExceptTheChoosenOne
-      } 
-      
+      }       
 
-      /* LÓGICA USANDO O MÉTODO FILTER
-      console.log('producttttttttt', product)
+      /* LÓGICA USANDO O MÉTODO FILTER     
 
-      //this.selectedProduct = product;
-      //console.log('selectedproduct', this.selectedProduct)
-      //console.log('cartiiii', JSON.stringify(this.cart))
+      //this.selectedProduct = product;      
 
       let productToBeRemovedFromCart = this.cart.filter(
         (p) => { 
-          //console.log('1',product.id)
-          //console.log('2', p.id)
+          
          return  p.id == product.id //SE TIVER AS CHAVES TEM QUE DAR UM RETURN
-        
-        //console.log('4',this.selectedProduct.id)
 
         }
       );     
-
-      console.log("antess", productToBeRemovedFromCart);      
-      //console.log("id", productToBeRemovedFromCart[0].id);
-      //console.log("qtd", productToBeRemovedFromCart[0].quantidade);
-      //console.log("preco", productToBeRemovedFromCart[0].preco);      
-      //console.log('esse', productToBeRemovedFromCart)
-      //console.log('carttt11', this.cart[0])
       
       if (productToBeRemovedFromCart) {
         let confirm = window.confirm(
           "Are you sure you want to remove this item from cart?"
         )
-        
-        console.log("depoiss", productToBeRemovedFromCart);
-        //console.log('jh',confirm)
-        //console.log('carttt22', this.cart[productToBeRemovedFromCart[0]])
 
-        if (confirm) {
-          //console.log("carrinhoooo", this.cart);
+        if (confirm) {          
           // this.totalPrice -=
           //   productToBeRemovedFromCart[0].quantidade *
-          //   productToBeRemovedFromCart[0].preco;
-
-          console.log('oiiii',productToBeRemovedFromCart[0])
+          //   productToBeRemovedFromCart[0].preco;          
 
           this.cart.splice(productToBeRemovedFromCart[0], 1);
         }
@@ -524,43 +541,50 @@ export default {
     }, 350), // 350ms de atraso
 
     onSearchInput(query) {
-      //evento listener de v-autocomplete
-
-      //console.log('aaaa',query)
+      //evento listener de v-autocomplete     
       this.searchQuery = query.target.value;
       this.debouncedSetAllProducts(this.searchQuery);
       //this.setAllProducts(query)
     },
-  },
+
+    addNewProductQuantityInCart() {
+      this.newProductQuantityInCart++
+    }, 
+
+    subtractNewProductQuantityInCart() {
+      this.newProductQuantityInCart--
+    },
+
+    pressEnterKey(product) {
+      let selectedItem = this.cart.find(p => p.id == product.id)
+
+      if(selectedItem) {
+        this.selectedProduct = selectedItem
+      }
+    }
+  },  
 
   computed: {
     totalPriceComputed() {
 
-      let tp = this.cart.reduce((accumulator, currentValue) =>
-         accumulator + currentValue.preco * currentValue.quantidade
-      , 0) //return já está implícito sem as chaves
+      let tpc = this.cart.reduce((accumulator, product) =>  {
+        return accumulator + product.quantidade * product.preco
+      }, 0)
 
-      //console.log('mds', tp)
-
-      return tp.toLocaleString('pt-BR', {
+      return tpc.toLocaleString('pt-BR', {
         style: 'currency',
-        currency: 'BRL',
+        currency: 'BRL'
       })
-    },  
+    }, 
 
-    // totalPriceComputed() {
-    //   let tp = this.cart.reduce((accumulator, currentValue) => {
-    //     return accumulator + currentValue.preco * currentValue.quantidade;
-    //   }, 0);
 
-    //   console.log('mds', tp); // Agora vai retornar o valor correto
+    totalPriceComputedDot() {
+      let tpc = this.cart.reduce((accumulator, product) =>  {
+        return accumulator + product.quantidade * product.preco
+      }, 0)
 
-    //   return tp.toLocaleString("pt-BR", {
-    //     style: "currency",
-    //     currency: "BRL"
-    //   });
-    // },
-
+      return tpc.toFixed(2)
+    }, 
 
     ...mapState({
       allProducts: (state) => state.products,
@@ -571,26 +595,20 @@ export default {
       getAllProducts: "getAllProducts",
     }),
 
-    orderTotalPrice() {
+      // orderTotalPrice() {
       // let totalPrice = 0;
-
-      // console.log('antes carrinho', totalPrice)
-      // this.cart.forEach((order) => {
-      //   console.log('orderrr', order)
+      
+      // this.cart.forEach((order) => {      
       //   totalPrice += order.preco * order.quantidade;
+      // });      
+
+      //totalPrice = totalPrice.toFixed(2).replace('.', ',')     
+
+      // return this.totalPrice.toLocaleString("pt-BR", {
+      //   style: "currency",
+      //   currency: "BRL",
       // });
-      // console.log('depois carrinho', totalPrice)
-      //console.log('tp', totalPrice)
-
-      //totalPrice = totalPrice.toFixed(2).replace('.', ',')
-
-      //console.log('tp', totalPrice)
-
-      return this.totalPrice.toLocaleString("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      });
-    },
+      // },
 
     getFilteredProducts() {
       if (!this.searchQuery?.trim()) {
@@ -617,16 +635,18 @@ export default {
     },
   },
 
-  mounted() {
-    this.setAllClients();
-    // params = null
+  // watch() {
+  //     cart(newValue, oldValue) => {
+  //       console.log('newValue', newValue)
+  //       console.log('oldValue', oldValue)
+        
+  //     }
+  //   },
 
-    // if(params == null || params == '') {
-    //   this.setAllProducts();
-    // } else {
-    //   params = this.searchQuery
+  mounted() {
+    this.setAllClients();    
     this.setAllProducts(this.searchQuery);
-    // }
+    
   },
 
   created() {},
@@ -634,16 +654,8 @@ export default {
   onMounted() {},
 
   beforeUpdate() {},
-
-  //updated(params) {
+  
   updated() {
-    // params = null
-    // if(params == null || params == '') {
-    //   this.setAllProducts();
-    // } else {
-    //   params = this.searchQuery
-    //   this.setAllProducts(params)
-    // }
   },
 };
 </script>

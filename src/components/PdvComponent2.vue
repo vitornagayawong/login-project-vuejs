@@ -11,13 +11,14 @@
             v-model="selectedClient"
             :rules="clientRules"
             class="ml-2"
+            autofocus
           ></v-select>
         </v-col>
       </v-row>
     </v-container>
 
     <!--  @update:search-input="onSearchInput" -->
-    <v-container >
+    <v-container>
       <v-row align="center" justify="center">
         <v-col cols="12" d-flex>
           <div class="produtos">
@@ -42,7 +43,8 @@
               placeholder="Quantity"
               outlined
               v-model="selectedProductQuantity"
-              class="mx-2 "
+              class="mx-2"
+              :rules="selectedProductQuantityRules"
             ></v-text-field>
 
             <v-btn @click="addToCart" class="mx-2 mb-7" color="blue">
@@ -66,7 +68,10 @@
           <v-btn icon @click="openModalCart(item)">
             <v-icon>mdi-pencil</v-icon>
           </v-btn>
-        </template>
+          <v-btn icon @click="removeItemFromCart(item)">
+            <v-icon>mdi-trash-can</v-icon>
+          </v-btn>
+        </template>       
       </v-data-table>
     </v-container>
 
@@ -76,17 +81,20 @@
           <span class="headline">Detalhes do Produto no Carrinho</span>
         </v-card-title>
 
-        <h1>Qtd Prod: {{ selectedProduct.quantidade }}</h1>
+        <p id="qtdProdCarrinho">Qtd Prod: {{ selectedProduct.quantidade }}</p>
 
         <v-text-field
           label="Input a new desired quantity"
           v-model="newProductQuantityInCart"
+          class="newDesiredQuantity"
         ></v-text-field>
 
         <v-card-actions>
           <v-btn text @click="closeModal">Fechar</v-btn>
-          <v-btn text @click="updateItem">Update Item</v-btn>
-          <v-btn text @click="removeItemFromCart">Remove Item from Cart</v-btn>
+          <v-btn text @click="updateItem" class="blue lighten-2"
+            >Update Item</v-btn
+          >
+          <!-- <v-btn text @click="removeItemFromCart" class="red darken-1">Remove Item from Cart</v-btn> -->
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -94,7 +102,12 @@
     <br />
 
     <v-container fluid d-flex justify-center>
-      <v-row align="center" d-flex class="pr-10 pl-10 pagamentoEPreco" justify-center>
+      <v-row
+        align="center"
+        d-flex
+        class="pr-10 pl-10 pagamentoEPreco"
+        justify-center
+      >
         <v-col class="d-flex">
           <v-select
             label="Select a type of payment"
@@ -111,30 +124,29 @@
           <v-text-field
             label="Total Price (R$)"
             outlined
-            v-model="orderTotalPrice"
+            v-model="totalPriceComputed"
             disabled
             class="precoTotal"
           ></v-text-field>
           <!-- <total-price
             :orderTotalPrice="orderTotalPrice"
           /> -->
-
         </v-col>
       </v-row>
     </v-container>
 
-    <v-btn @click="openDialogFinalizePurchase()" class="finalizarCompra green darken-1">Finalize purchase</v-btn>
-
-    <v-dialog
-      v-model="dialogFinalizePurchase"
-      persistent
-      max-width="290"
+    <v-btn
+      @click="openDialogFinalizePurchase()"
+      class="finalizarCompra green darken-1"
+      >Finalize purchase</v-btn
     >
+
+    <v-dialog v-model="dialogFinalizePurchase" persistent max-width="290">
       <v-card>
-        <v-card-title class="text-h5">
-          Confirm Purchase
-        </v-card-title>
-        <v-card-text>Are you sure you want to finalize this purchase?</v-card-text>
+        <v-card-title class="text-h5"> Confirm Purchase </v-card-title>
+        <v-card-text
+          >Are you sure you want to finalize this purchase?</v-card-text
+        >
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn
@@ -144,11 +156,7 @@
           >
             Disagree
           </v-btn>
-          <v-btn
-            color="green darken-1"
-            text
-            @click="finalizePurchase()"
-          >
+          <v-btn color="green darken-1" text @click="finalizePurchase()">
             Agree
           </v-btn>
         </v-card-actions>
@@ -156,37 +164,30 @@
     </v-dialog>
 
     <v-dialog
-        transition="dialog-top-transition"
-        max-width="600"
-        v-model="dialogInvoice"
-      >
-        <template>
-          <v-card>
-            <v-toolbar
-              color="primary"
-              dark
-            >INVOICE</v-toolbar>
-            <v-row>
-              <v-col>Name</v-col>
-              <v-col>Quantity</v-col>
-              <v-col>Price</v-col>
-            </v-row>
-            <v-row v-for="(product, index) in cart" :key="index">
-              <v-col>{{ product.nome }}</v-col>
-              <v-col>{{ product.quantidade }}</v-col>
-              <v-col>{{ product.quantidade * product.preco }}</v-col>
-            </v-row>
-            <v-card-text>Total Price: {{ orderTotalPrice }}</v-card-text>
-            <v-card-actions class="justify-end">
-              <v-btn
-                text
-                @click="closeDialogInvoice"
-              >Close</v-btn>
-            </v-card-actions>
-          </v-card>
-        </template>
-      </v-dialog>
-
+      transition="dialog-top-transition"
+      max-width="600"
+      v-model="dialogInvoice"
+    >
+      <template>
+        <v-card>
+          <v-toolbar color="primary" dark>INVOICE</v-toolbar>
+          <v-row>
+            <v-col>Name</v-col>
+            <v-col>Quantity</v-col>
+            <v-col>Price</v-col>
+          </v-row>
+          <v-row v-for="(product, index) in cart" :key="index">
+            <v-col>{{ product.nome }}</v-col>
+            <v-col>{{ product.quantidade }}</v-col>
+            <v-col>{{ product.quantidade * product.preco }}</v-col>
+          </v-row>
+          <v-card-text>Total Price: {{ orderTotalPrice }}</v-card-text>
+          <v-card-actions class="justify-end">
+            <v-btn text @click="closeDialogInvoice">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </template>
+    </v-dialog>
   </div>
 </template>
 
@@ -202,17 +203,16 @@ export default {
 
   data() {
     return {
-      precoComPonto: '',
+      precoComPonto: "",
       dialogInvoice: false,
-      clientRules: [
-        (client) => !!client || 'Select a client!'
-      ],
+      clientRules: [(client) => !!client || "Select a client!"],
       productRules: [
-        (product) => !!product || 'Insert a product!',
+        (product) => !!product || "Insert a product!",
         //(product) => (product && product.id) || 'Invalid product selected!',
       ],
-      typeOfPaymentRules: [
-        (payment) => !!payment || 'Choose a payment!',
+      typeOfPaymentRules: [(payment) => !!payment || "Choose a payment!"],
+      selectedProductQuantityRules: [
+        (selectedProductQuantity) => typeof(selectedProductQuantity) != Number || 'This must be numeric!'
       ],
       dialogFinalizePurchase: false,
       totalPrice: 0,
@@ -272,8 +272,7 @@ export default {
   //   },
   // },
 
-  methods: {    
-
+  methods: {
     ...mapActions({
       setAllClients: "setAllClients",
       setAllProducts: "setAllProducts",
@@ -296,8 +295,6 @@ export default {
 
     async finalizePurchase() {
       try {
-        
-
         const date = new Date();
         const day = date.getDate();
         let month = date.getMonth() + 1;
@@ -315,136 +312,221 @@ export default {
           valor_total: this.totalPrice,
           forma_pgt: this.selectedTypeOfPayment,
           produtos: this.cart,
-        };        
+        };
 
         const response = await http.post("pedidos", payload);
         //console.log('aaaaaaaaaa',response);
 
-        if(response.data.response === null) {
-          window.alert('Fill all the required fields!')
-          this.dialogFinalizePurchase = false
+        if (response.data.response === null) {
+          window.alert("Fill all the required fields!");
+          this.dialogFinalizePurchase = false;
         }
 
-        if(response.data.error) {
-          window.alert(response.data.error)
+        if (response.data.error) {
+          window.alert(response.data.error);
           //this.dialogFinalizePurchase = false
         }
 
-        if(response.data.error == 'Quantidade requisitada do(a) cadeira madeira verde maior que a do estoque!') {
-          let cadeiraMadeiraVerde = this.cart.find(produto => produto.nome == 'cadeira madeira verde')          
+        if (
+          response.data.error ==
+          "Quantidade requisitada do(a) cadeira madeira verde maior que a do estoque!"
+        ) {
+          let cadeiraMadeiraVerde = this.cart.find(
+            (produto) => produto.nome == "cadeira madeira verde"
+          );
           //console.log('aquii',cadeiraMadeiraVerde)
-          let qtdCadeiraMadeiraVerdeNoCarrinho = cadeiraMadeiraVerde.quantidade
+          let qtdCadeiraMadeiraVerdeNoCarrinho = cadeiraMadeiraVerde.quantidade;
 
           //console.log('qtdCadeiraMadeiraVerdeNoCarrinho', qtdCadeiraMadeiraVerdeNoCarrinho)
 
-          let idCadeiraMadeiraVerdeNoCarrinho = this.cart.findIndex(produto => produto.nome == 'cadeira madeira verde')
+          let idCadeiraMadeiraVerdeNoCarrinho = this.cart.findIndex(
+            (produto) => produto.nome == "cadeira madeira verde"
+          );
           //console.log('idCadeiraMadeiraVerdeNoCarrinho', idCadeiraMadeiraVerdeNoCarrinho)
 
-          this.cart.splice(idCadeiraMadeiraVerdeNoCarrinho, 1)
+          this.cart.splice(idCadeiraMadeiraVerdeNoCarrinho, 1);
 
           //console.log('carrinho', this.cart)
 
-          this.totalPrice -= qtdCadeiraMadeiraVerdeNoCarrinho * cadeiraMadeiraVerde.preco
-
-
+          this.totalPrice -=
+            qtdCadeiraMadeiraVerdeNoCarrinho * cadeiraMadeiraVerde.preco;
         }
 
-        if(response.statusText == 'Created') {
-          this.dialogInvoice = true
+        if (response.statusText == "Created") {
+          this.dialogInvoice = true;
         }
-
       } catch (e) {
         console.log(e);
       }
     },
 
     openDialogFinalizePurchase() {
-      if(!this.selectedClient || !this.cart || !this.selectedTypeOfPayment) {
-          window.alert('Fill all the required fields')
+      if (!this.selectedClient || !this.cart || !this.selectedTypeOfPayment) {
+        window.alert("Fill all the required fields");
       } else {
-        this.dialogFinalizePurchase = true
+        this.dialogFinalizePurchase = true;
       }
-
     },
-    
+
     closeDialogInvoice() {
-      this.dialogFinalizePurchase = false
-      this.dialogInvoice = false
+      this.dialogFinalizePurchase = false;
+      this.dialogInvoice = false;
     },
 
     addToCart() {
       try {
-        let obj = this.getAllProducts.find(
+        let prod = this.getAllProducts.find(
           (product) => product.id == this.selectedProduct
         );
 
+        //console.log('prodddd', prod)
+
         //console.log(this.selectedProduct);
-        //console.log(obj);        
 
-        if (obj) {
+        if (this.selectedProductQuantity == 0) {
+          window.alert("Quantity has to be more than zero!");
+        } else if (this.selectedProductQuantity > prod.estoque) {
+          window.alert(`We don't have this quantity in our storage, sorry! Now it's available only ${prod.estoque} units!`);
+          this.selectedProductQuantity = 1
+        } else {
+          if (prod) {
+            let productAlreadyInCart = this.cart.find((p) => p.id === prod.id);
 
-          let productAlreadyInCart = this.cart.find(p => p.id === obj.id)
-          
-          if(productAlreadyInCart) {
-            productAlreadyInCart.quantidade += Number(this.selectedProductQuantity)
-            console.log('kk',productAlreadyInCart)
-            console.log('antes', this.totalPrice)
-            this.totalPrice += this.selectedProductQuantity * productAlreadyInCart.preco
-            console.log('depois', this.totalPrice)
-            //this.totalPrice.toFixed(2)
-          } else {
-            obj.quantidade = Number(this.selectedProductQuantity)
-            this.cart.push(obj)
-            //console.log('aqui', obj)
-            this.totalPrice += obj.quantidade * obj.preco
-            
+            if (productAlreadyInCart) {
+              productAlreadyInCart.quantidade += Number(
+                this.selectedProductQuantity
+              );
+              //console.log('kk',productAlreadyInCart)
+              //console.log('antes', this.totalPrice)
+              this.totalPrice +=
+                this.selectedProductQuantity * productAlreadyInCart.preco;
+              //console.log('depois', this.totalPrice)
+              //this.totalPrice.toFixed(2)
+            } else {
+              prod.quantidade = Number(this.selectedProductQuantity);
+              this.cart.push(prod);
+              //console.log('aqui', obj)
+              this.totalPrice += prod.quantidade * prod.preco;
+            }
+            // obj.quantidade = this.selectedProductQuantity;
+            // //console.log('aqui',this.selectedProductQuantity)
+            // this.cart.push(obj);
+
+            // if(this.cart.length > 0) {
+            //   this.cart.reduce((anterior, atual) => {
+            //     //this.totalPrice += Number(anterior.preco)
+            //     this.totalPrice += Number(atual.preco)
+            //   }, 0)
+            // } else {
+
+            // }
+
+            this.selectedProduct = {};
+            this.selectedProductQuantity = 1;
           }
-          // obj.quantidade = this.selectedProductQuantity;
-          // //console.log('aqui',this.selectedProductQuantity)
-          // this.cart.push(obj);
-
-          // if(this.cart.length > 0) {
-          //   this.cart.reduce((anterior, atual) => {
-          //     //this.totalPrice += Number(anterior.preco)
-          //     this.totalPrice += Number(atual.preco)
-          //   }, 0)
-          // } else {
-            
-          // }
-
-          this.selectedProduct = {};
-          this.selectedProductQuantity = 0;
-        }       
-        //console.log(this.cart)
+          //console.log(this.cart)
+        }
+        //console.log(obj);
       } catch (e) {
         console.log(e);
       }
     },
 
     updateItem() {
-      let index = this.cart.findIndex(
+      let choosenProductIndex = this.cart.findIndex(
         (product) => product.id == this.selectedProduct.id
       );
 
-      this.cart[index].quantidade = this.newProductQuantityInCart;
+      let setedQuantityInCart = this.cart[choosenProductIndex].quantidade;
+
+      //console.log('opa',setedQuantityInCart)
+
+      //console.log(this.cart)
+
+      this.cart[choosenProductIndex].quantidade = this.newProductQuantityInCart;
+
+      this.totalPrice +=
+        (this.newProductQuantityInCart - setedQuantityInCart) *
+        this.cart[choosenProductIndex].preco;
     },
 
-    removeItemFromCart() {
-      let index = this.cart.findIndex(
-        (product) => product.id == this.selectedProduct.id
-      );
-      this.cart.splice(index, 1);
+    removeItemFromCart(product) { 
+
+      let confirm = window.confirm("Are you sure you want to remove this item from cart?")
+
+      if(confirm) {
+        let allProductsExceptTheChoosenOne = this.cart.filter( p => {
+          return p.id != product.id
+        })
+
+        //console.log(allProductsExceptTheChoosenOne)
+
+        this.cart = allProductsExceptTheChoosenOne
+      } 
+      
+
+      /* LÓGICA USANDO O MÉTODO FILTER
+      console.log('producttttttttt', product)
+
+      //this.selectedProduct = product;
+      //console.log('selectedproduct', this.selectedProduct)
+      //console.log('cartiiii', JSON.stringify(this.cart))
+
+      let productToBeRemovedFromCart = this.cart.filter(
+        (p) => { 
+          //console.log('1',product.id)
+          //console.log('2', p.id)
+         return  p.id == product.id //SE TIVER AS CHAVES TEM QUE DAR UM RETURN
+        
+        //console.log('4',this.selectedProduct.id)
+
+        }
+      );     
+
+      console.log("antess", productToBeRemovedFromCart);      
+      //console.log("id", productToBeRemovedFromCart[0].id);
+      //console.log("qtd", productToBeRemovedFromCart[0].quantidade);
+      //console.log("preco", productToBeRemovedFromCart[0].preco);      
+      //console.log('esse', productToBeRemovedFromCart)
+      //console.log('carttt11', this.cart[0])
+      
+      if (productToBeRemovedFromCart) {
+        let confirm = window.confirm(
+          "Are you sure you want to remove this item from cart?"
+        )
+        
+        console.log("depoiss", productToBeRemovedFromCart);
+        //console.log('jh',confirm)
+        //console.log('carttt22', this.cart[productToBeRemovedFromCart[0]])
+
+        if (confirm) {
+          //console.log("carrinhoooo", this.cart);
+          // this.totalPrice -=
+          //   productToBeRemovedFromCart[0].quantidade *
+          //   productToBeRemovedFromCart[0].preco;
+
+          console.log('oiiii',productToBeRemovedFromCart[0])
+
+          this.cart.splice(productToBeRemovedFromCart[0], 1);
+        }
+
+        //atualizar saldo
+
+        this.modalCart = false;
+      }
+
+      */
     },
 
     debouncedSetAllProducts: debounce(function (query) {
       //arrow function não funciona bem por causa do this dentro da função
       this.setAllProducts(query);
-    }, 1000), // 1000ms de atraso
+    }, 350), // 350ms de atraso
 
     onSearchInput(query) {
       //evento listener de v-autocomplete
 
-      console.log('aaaa',query)
+      //console.log('aaaa',query)
       this.searchQuery = query.target.value;
       this.debouncedSetAllProducts(this.searchQuery);
       //this.setAllProducts(query)
@@ -452,6 +534,34 @@ export default {
   },
 
   computed: {
+    totalPriceComputed() {
+
+      let tp = this.cart.reduce((accumulator, currentValue) =>
+         accumulator + currentValue.preco * currentValue.quantidade
+      , 0) //return já está implícito sem as chaves
+
+      //console.log('mds', tp)
+
+      return tp.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      })
+    },  
+
+    // totalPriceComputed() {
+    //   let tp = this.cart.reduce((accumulator, currentValue) => {
+    //     return accumulator + currentValue.preco * currentValue.quantidade;
+    //   }, 0);
+
+    //   console.log('mds', tp); // Agora vai retornar o valor correto
+
+    //   return tp.toLocaleString("pt-BR", {
+    //     style: "currency",
+    //     currency: "BRL"
+    //   });
+    // },
+
+
     ...mapState({
       allProducts: (state) => state.products,
     }),
@@ -471,14 +581,14 @@ export default {
       // });
       // console.log('depois carrinho', totalPrice)
       //console.log('tp', totalPrice)
-      
+
       //totalPrice = totalPrice.toFixed(2).replace('.', ',')
 
       //console.log('tp', totalPrice)
-      
-      return this.totalPrice.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
+
+      return this.totalPrice.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
       });
     },
 
@@ -538,65 +648,74 @@ export default {
 };
 </script>
 
-<style >
-  
-  .produtos {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    max-width: 80.5%;
-    /* border: 1px solid red */
-    margin: auto;
-    margin-top: 10px;
-  }
-  
-  .pagamentoEPreco {
-    max-width: 50%;
-    /* border: 1px solid red */
-  }
-  
-  .tipoPagamento {
-    width: 20px;
-    max-width: 300px;   
-    /* border: 1px solid red */    
-  }
-  
-  .precoTotal {
-    width: 3000px;
-    max-width: 300px;
-    /* border: 1px solid red */
-  }
+<style>
+.produtos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 80.5%;
+  /* border: 1px solid red */
+  margin: auto;
+  margin-top: 10px;
+}
 
-  .finalizarCompra {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-  }
+.pagamentoEPreco {
+  max-width: 50%;
+  /* border: 1px solid red */
+}
 
-  .cart {
-    width: 82%;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    height: 400px;
-  }
+.tipoPagamento {
+  width: 20px;
+  max-width: 300px;
+  /* border: 1px solid red */
+}
 
-  .cart th {
-    background-color: #a269f1;
-    color: white;
-    font-weight: bold;
-  }
+.precoTotal {
+  width: 3000px;
+  max-width: 300px;
+  /* border: 1px solid red */
+}
 
-  .v-icon__content {
-    background-color: green;
-  }  
+.finalizarCompra {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+}
 
-  .cliente {
-    margin-left: 170px;
-    max-width: 20%;
-    margin-top: 50px;
-  }
+.cart {
+  width: 82%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  height: 400px;
+}
 
-  .productName {
-    width: 100%;
-  }
+.cart th {
+  background-color: #a269f1;
+  color: white;
+  font-weight: bold;
+}
+
+.v-icon__content {
+  background-color: green;
+}
+
+.cliente {
+  margin-left: 170px;
+  max-width: 20%;
+  margin-top: 50px;
+}
+
+.productName {
+  width: 100%;
+}
+
+#qtdProdCarrinho {
+  margin-left: 25px;
+  text-decoration: underline;
+}
+
+.newDesiredQuantity {
+  max-width: 15%;
+  margin-left: 25px;
+}
 </style>

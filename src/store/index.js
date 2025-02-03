@@ -36,6 +36,8 @@ export default new Vuex.Store({
     },
 
     pageOrders: 1,  //novo número da página.
+
+    coupons: [],
   },
 
   getters: {
@@ -58,6 +60,10 @@ export default new Vuex.Store({
     getOrders(state) {
       return state.orders
     },
+
+    getCoupons(state) {
+      return state.coupons
+    }
 
   },
 
@@ -102,6 +108,10 @@ export default new Vuex.Store({
 
     SET_PAGE_ORDERS(state, payload) { //página atual dos pedidos
       state.pageOrders = payload
+    },
+
+    SET_COUPONS(state, payload) {
+      state.coupons = payload
     }
   },
 
@@ -189,6 +199,16 @@ export default new Vuex.Store({
 
     setPageOrders({commit}, payload) {
       commit('SET_PAGE_ORDERS', payload)
+    },
+
+    async setCoupons({commit}, payload) {
+      const response = await http.get('cupom-desconto')
+      //console.log(response.data[0])
+
+      payload = response.data[0]
+
+      commit('SET_COUPONS', payload)
+
     }
 
     //Segunda forma de fazer!

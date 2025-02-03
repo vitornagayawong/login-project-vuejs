@@ -33,12 +33,13 @@
               filled
               label="Product name"
               :search-input="searchQuery"
-              @keydown.enter="pressEnterKey"
+              @keydown.enter="pressEnterKey()"
               @keyup="onSearchInput"
-              no-filter
               class="mx-2 productName"
               color="purple"
               :rules="productRules"
+              hide-selected
+              :menu-props="{transition: false}"
             ></v-autocomplete>
 
             <v-text-field
@@ -120,11 +121,8 @@
     <br />
 
     <v-container fluid d-flex justify-center>
-      <v-row
-        align="center"
-        d-flex
-        class="pr-10 pl-10 pagamentoEPreco"
-        justify-center
+      <v-row        
+        class="pr-10 pl-10 pagamentoEPreco d-flex justify-center align-center"        
       >
         <v-col class="d-flex">
           <v-select
@@ -152,6 +150,22 @@
             :orderTotalPrice="orderTotalPrice"
           /> -->
         </v-col>
+
+        <v-col>
+          <v-text-field
+            label="Do you have a discount coupon?"
+            placeholder="Discount coupon"
+            v-model="txtCoupon"
+            outlined
+            :rules="txtCouponRules"
+            :disabled="isTxtCouponDisabled"
+          ></v-text-field>
+        </v-col>
+
+        <v-col>
+          <v-btn @click="applyCoupon">Apply</v-btn>
+        </v-col>
+
       </v-row>
     </v-container>
 
@@ -201,13 +215,24 @@
             <v-col>{{ product.quantidade }}</v-col>
             <v-col>{{ product.quantidade * product.preco }}</v-col>
           </v-row>
-          <v-card-text>Total Price: {{ totalPriceComputed }}</v-card-text>
+          <v-row> 
+            <v-col d-flex justify-space-between>
+              <v-card-text>Subtotal: {{ this.totalPriceFakeInvoice() }}</v-card-text>
+            </v-col>
+            <v-col>
+              <v-card-text>Discount: {{ this.couponDiscount }}%</v-card-text>
+            </v-col>
+            <v-col>
+              <v-card-text>Total Price: {{ this.totalPriceComputed }}</v-card-text>
+            </v-col>
+          </v-row>
           <v-card-actions class="justify-end">
             <v-btn text @click="closeDialogInvoice">Close</v-btn>
           </v-card-actions>
         </v-card>
       </template>
     </v-dialog>
+    
   </div>
 </template>
 
@@ -223,6 +248,11 @@ export default {
 
   data() {
     return {
+      totalPriceInInvoice: 0,
+      selectedIdCoupon: 0,
+      isTxtCouponDisabled: false,
+      couponDiscount: 0,
+      txtCoupon: '',
       precoComPonto: "",
       dialogInvoice: false,
       clientRules: [
@@ -285,6 +315,9 @@ export default {
         { text: "Ações", value: "actions" },
       ],
       filterProducts: [],
+      txtCouponRules: [
+        () => this.txtCoupon.length <= 3 || 'Text max lenght is 3'
+      ]
     };
   },
 
@@ -292,6 +325,7 @@ export default {
     ...mapActions({
       setAllClients: "setAllClients",
       setAllProducts: "setAllProducts",
+      setCoupons: "setCoupons"
     }),
 
     openModal(product) {
@@ -312,19 +346,26 @@ export default {
     async finalizePurchase() {
       try {
         const date = new Date();
-        const day = date.getDate();
+        let day = date.getDate();
         let month = date.getMonth() + 1;
         const year = date.getFullYear();
+
+        if (day < 10) {
+          day = "0" + day;
+        }
 
         if (month < 10) {
           month = "0" + month;
         }
+        
+        console.log('diaaaa', day)
 
         const fullDate = year + "-" + month + "-" + day;
 
         //console.log('preço com pponto', this.totalPriceComputedDot)
-
+        //console.log('ppp', this.selectedIdCoupon)
         const payload = {
+          cupom_desconto_id: this.selectedIdCoupon,
           cliente_id: this.selectedClient,
           data: fullDate,
           valor_total: this.totalPriceComputedDot,
@@ -334,8 +375,7 @@ export default {
 
         const response = await http.post("pedidos", payload);
 
-        //console.log('response', response)
-
+        console.log('response', response)
 
         if (response.data.response === null) {
           window.alert("Fill all the required fields!");
@@ -351,11 +391,10 @@ export default {
         //   response.data.error ==
         //   "Quantidade requisitada do(a) cadeira madeira verde maior que a do estoque!"
         // ) {
-          // let cadeiraMadeiraVerde = this.cart.find(
-          //   (produto) => produto.nome == "cadeira madeira verde"
-          // );
-          //let qtdCadeiraMadeiraVerdeNoCarrinho = cadeiraMadeiraVerde.quantidade;
-
+        // let cadeiraMadeiraVerde = this.cart.find(
+        //   (produto) => produto.nome == "cadeira madeira verde"
+        // );
+        //let qtdCadeiraMadeiraVerdeNoCarrinho = cadeiraMadeiraVerde.quantidade;
 
         //   let idCadeiraMadeiraVerdeNoCarrinho = this.cart.findIndex(
         //     (produto) => produto.nome == "cadeira madeira verde"
@@ -544,7 +583,6 @@ export default {
       //evento listener de v-autocomplete     
       this.searchQuery = query.target.value;
       this.debouncedSetAllProducts(this.searchQuery);
-      //this.setAllProducts(query)
     },
 
     addNewProductQuantityInCart() {
@@ -561,15 +599,56 @@ export default {
       if(selectedItem) {
         this.selectedProduct = selectedItem
       }
-    }
+    },
+
+    applyCoupon() { 
+      let couponChoosen = this.getCoupons.filter(c => {
+        //console.log('c' , c.codigo)
+        return c.codigo == this.txtCoupon
+      })
+
+      //console.log('antes',couponChoosen)
+      
+      if(couponChoosen.length != 0) { //aqui achou o cupom
+        //console.log('this.totalPriceComputed', this.totalPriceComputed)
+        if(this.totalPriceComputed == 'R$ 0,00') {
+          window.alert('Choose a product before to continue!')        
+        } else { //tem pelo menos um produto no carrinho
+          //console.log('couponChoosen.valor_desconto', couponChoosen[0].valor_desconto)
+          //console.log('this.totalPriceComputed', this.totalPriceComputed)
+          this.couponDiscount = Number(couponChoosen[0].valor_desconto)
+          this.isTxtCouponDisabled = true
+          this.selectedIdCoupon = couponChoosen[0].id
+          //console.log('aquii', this.couponDiscount)
+          return this.couponDiscount
+        }
+        //console.log('oiii')          
+        
+      } else {
+        window.alert('Coupon not found!')
+        this.txtCoupon = ''
+      }
+
+    },
+
+    totalPriceFakeInvoice() {
+      let tpc = this.cart.reduce((accumulator, product) =>  {
+        return accumulator + product.quantidade * product.preco
+      }, 0)
+
+      return this.totalPriceInInvoice = tpc
+    },
   },  
 
-  computed: {
+  computed: {  
+
     totalPriceComputed() {
 
       let tpc = this.cart.reduce((accumulator, product) =>  {
         return accumulator + product.quantidade * product.preco
       }, 0)
+
+      tpc = tpc * (100 - this.couponDiscount) * 0.01 
 
       return tpc.toLocaleString('pt-BR', {
         style: 'currency',
@@ -577,13 +656,12 @@ export default {
       })
     }, 
 
-
     totalPriceComputedDot() {
-      let tpc = this.cart.reduce((accumulator, product) =>  {
+      let tpcd = this.cart.reduce((accumulator, product) =>  {
         return accumulator + product.quantidade * product.preco
       }, 0)
 
-      return tpc.toFixed(2)
+      return tpcd.toFixed(2)
     }, 
 
     ...mapState({
@@ -593,6 +671,7 @@ export default {
     ...mapGetters({
       getAllClients: "getAllClients",
       getAllProducts: "getAllProducts",
+      getCoupons: "getCoupons"
     }),
 
       // orderTotalPrice() {
@@ -646,7 +725,7 @@ export default {
   mounted() {
     this.setAllClients();    
     this.setAllProducts(this.searchQuery);
-    
+    this.setCoupons()
   },
 
   created() {},

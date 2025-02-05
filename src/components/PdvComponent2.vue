@@ -1,25 +1,24 @@
 <template>
   <div>
     <v-container>
-      <v-row align="center">
-        <v-col class="d-flex" cols="12" sm="6  cliente">
+      <v-row align="center" >
+        <v-col class="d-flex" cols="12" sm="12">
           <v-select
             label="Select a Client"
             :items="getAllClients"
             item-text="nome"
             item-value="id"
             v-model="selectedClient"
-            :rules="clientRules"
-            class="ml-2"
+            :rules="clientRules"            
             autofocus
             :error="!selectedClient"
             :error-messages="!selectedClient ? 'Select an existing client!' : ''"
+            style="max-width: 40%; margin: auto;"
           ></v-select>
         </v-col>
       </v-row>
     </v-container>
 
-    <!--  @update:search-input="onSearchInput" -->
     <v-container>
       <v-row align="center" justify="center">
         <v-col cols="12" d-flex>
@@ -88,8 +87,8 @@
       </v-data-table>
     </v-container>
 
-    <v-dialog v-model="modalCart">
-      <v-card>
+    <v-dialog v-model="modalCart" max-width="430">
+      <v-card class="modalCartEdit">
         <v-card-title>
           <span class="headline">Detalhes do Produto no Carrinho</span>
         </v-card-title>
@@ -122,9 +121,22 @@
 
     <v-container fluid d-flex justify-center>
       <v-row        
-        class="pr-10 pl-10 pagamentoEPreco d-flex justify-center align-center"        
+        class="pagamentoEPreco"        
       >
-        <v-col class="d-flex">
+        <v-col cols="12" lg="6">
+          <v-radio-group v-model="radioGroup">
+            <v-radio             
+              label="Discount in subtotal"
+              value="1"
+            ></v-radio>
+            <v-radio             
+              label="Discount on itens"
+              value="2"
+            ></v-radio>
+          </v-radio-group>
+        </v-col>
+
+        <v-col class="d-flex" cols="12" sm="=12" lg="6">
           <v-select
             label="Select a type of payment"
             :items="typesPayment"
@@ -138,33 +150,32 @@
           ></v-select>
         </v-col>
 
-        <v-col>
+        <v-col cols="12">
           <v-text-field
             label="Total Price (R$)"
             outlined
             v-model="totalPriceComputed"
             disabled
-            class="precoTotal"
-          ></v-text-field>
-          <!-- <total-price
-            :orderTotalPrice="orderTotalPrice"
-          /> -->
-        </v-col>
-
-        <v-col>
-          <v-text-field
-            label="Do you have a discount coupon?"
-            placeholder="Discount coupon"
-            v-model="txtCoupon"
-            outlined
-            :rules="txtCouponRules"
-            :disabled="isTxtCouponDisabled"
+            class="totalPrice"
           ></v-text-field>
         </v-col>
 
-        <v-col>
-          <v-btn @click="applyCoupon">Apply</v-btn>
-        </v-col>
+        <div class="cupomDesc">
+          <v-col cols="12" class="coupon">
+            <v-text-field
+              label="Do you have a discount coupon?"
+              placeholder="Discount coupon"
+              v-model="txtCoupon"
+              outlined
+              :rules="txtCouponRules"
+              :disabled="isTxtCouponDisabled"
+            ></v-text-field>
+          </v-col>
+  
+          <v-col cols="12" sm="6">
+            <v-btn @click="applyCoupon">Apply</v-btn>
+          </v-col>
+        </div>
 
       </v-row>
     </v-container>
@@ -175,7 +186,7 @@
       >Finalize purchase</v-btn
     >
 
-    <v-dialog v-model="dialogFinalizePurchase" persistent max-width="290">
+    <v-dialog v-model="dialogFinalizePurchase" persistent max-width="430">
       <v-card>
         <v-card-title class="text-h5"> Confirm Purchase </v-card-title>
         <v-card-text
@@ -204,35 +215,81 @@
     >
       <template>
         <v-card>
-          <v-toolbar color="primary" dark>INVOICE</v-toolbar>
-          <v-row>
-            <v-col>Name</v-col>
-            <v-col>Quantity</v-col>
-            <v-col>Price</v-col>
-          </v-row>
-          <v-row v-for="(product, index) in cart" :key="index">
-            <v-col>{{ product.nome }}</v-col>
-            <v-col>{{ product.quantidade }}</v-col>
-            <v-col>{{ product.quantidade * product.preco }}</v-col>
-          </v-row>
-          <v-row> 
-            <v-col d-flex justify-space-between>
-              <v-card-text>Subtotal: {{ this.totalPriceFakeInvoice() }}</v-card-text>
-            </v-col>
-            <v-col>
-              <v-card-text>Discount: {{ this.couponDiscount }}%</v-card-text>
-            </v-col>
-            <v-col>
-              <v-card-text>Total Price: {{ this.totalPriceComputed }}</v-card-text>
-            </v-col>
-          </v-row>
+          <v-toolbar color="primary" dark class="invoice1">INVOICE 1</v-toolbar>
+          <div class="px-10 mt-10">
+            <v-row>
+              <v-col>Name</v-col>
+              <v-col>Quantity</v-col>
+              <v-col>Price</v-col>
+            </v-row>
+            <v-row v-for="(product, index) in cart" :key="index">
+              <v-col>{{ product.nome }}</v-col>
+              <v-col>{{ product.quantidade }}</v-col>
+              <v-col>R$ {{ product.quantidade * product.preco }}</v-col>
+            </v-row>
+            <v-row d-flex> 
+              <v-col>
+                <v-card-text>Subtotal: R$ {{ this.totalPriceFakeInvoice() }}</v-card-text>
+              </v-col>
+              <v-col>
+                <v-card-text>Discount: R$ {{ discountInReais }}</v-card-text>
+              </v-col>
+              <v-col>
+                <v-card-text>Total Price: {{ this.totalPriceComputed }}</v-card-text>
+              </v-col>
+            </v-row>
+          </div>          
           <v-card-actions class="justify-end">
-            <v-btn text @click="closeDialogInvoice">Close</v-btn>
+            <v-btn text @click="closeDialogInvoice" class="red accent-4">Close</v-btn>
           </v-card-actions>
         </v-card>
       </template>
     </v-dialog>
-    
+
+    <v-dialog
+      transition="dialog-top-transition"
+      max-width="600"
+      v-model="dialogInvoice2"
+    >
+      <template>
+        <v-card >
+          <v-toolbar color="primary" dark>INVOICE 2</v-toolbar>    
+          <div class="px-10 mt-10">
+            <v-row>
+              <v-col>Name</v-col>
+              <v-col>Quantity</v-col>
+              <v-col>Original Price</v-col>
+              <v-col>Discount</v-col>
+              <v-col>Final Price</v-col>
+            </v-row>
+            <v-row v-for="(product, index) in cartInvoice2" :key="index">
+              <v-col>{{ product.nome }}</v-col>
+              <v-col>{{ product.quantidade }}</v-col>
+              <v-col>R$ {{ product.subtotal }}</v-col>
+              <v-col>R$ {{ product.discount }} </v-col>
+              <v-col>R$ {{ product.total }} </v-col>
+            </v-row>
+            <v-row> 
+              <v-col d-flex justify-space-between>
+                <v-card-text>Subtotal: R$ {{ this.totalPriceFakeInvoice() }}</v-card-text>
+              </v-col>
+              <v-col>
+                <v-card-text>Discount: R$ {{ discountInReais }}</v-card-text>
+              </v-col>
+              <v-col>
+                <v-card-text>Total Price: {{ this.totalPriceComputed }}</v-card-text>
+              </v-col>
+            </v-row>
+          </div>      
+          
+          <v-card-actions class="justify-end">
+            <v-btn text @click="closeDialogInvoice2" class="deep-purple lighten-2">Close</v-btn>
+          </v-card-actions>
+
+        </v-card>
+      </template>
+    </v-dialog>
+
   </div>
 </template>
 
@@ -248,6 +305,7 @@ export default {
 
   data() {
     return {
+      radioGroup: 0,
       totalPriceInInvoice: 0,
       selectedIdCoupon: 0,
       isTxtCouponDisabled: false,
@@ -255,6 +313,7 @@ export default {
       txtCoupon: '',
       precoComPonto: "",
       dialogInvoice: false,
+      dialogInvoice2: false,
       clientRules: [
         (client) => !!client || "Select a client!", 
       ],
@@ -322,10 +381,20 @@ export default {
   },
 
   methods: {
-    ...mapActions({
-      setAllClients: "setAllClients",
-      setAllProducts: "setAllProducts",
-      setCoupons: "setCoupons"
+    // ...mapActions({
+    //   setAllClients: "setAllClients",
+    //   setAllProducts: "setAllProducts",
+    //   setCoupons: "setCoupons"
+    // }),
+
+    ...mapActions('clientModule', {
+      setAllClients: "setAllClients",      
+    }),
+    ...mapActions('productsModule', {
+      setAllProducts: "setAllProducts",      
+    }),
+    ...mapActions('couponsModule', {
+      setCoupons: "setCoupons",      
     }),
 
     openModal(product) {
@@ -335,11 +404,12 @@ export default {
 
     openModalCart(product) {
       this.selectedProduct = product;
+      this.newProductQuantityInCart = product.quantidade
       this.modalCart = true;
     },
 
     closeModal() {
-      this.modal = false;
+      //this.modal = false;
       this.modalCart = false;
     },
 
@@ -357,27 +427,29 @@ export default {
         if (month < 10) {
           month = "0" + month;
         }
-        
-        console.log('diaaaa', day)
 
         const fullDate = year + "-" + month + "-" + day;
 
-        //console.log('preço com pponto', this.totalPriceComputedDot)
-        //console.log('ppp', this.selectedIdCoupon)
         const payload = {
-          cupom_desconto_id: this.selectedIdCoupon,
+          //cupom_desconto_id: this.selectedIdCoupon,
           cliente_id: this.selectedClient,
           data: fullDate,
+          subtotal: this.subTotal,
+          desconto_porcentagem: this.couponDiscount, 
           valor_total: this.totalPriceComputedDot,
           forma_pgt: this.selectedTypeOfPayment,
           produtos: this.cart,
         };
 
+        if(this.selectedIdCoupon) { //adicionando um atributo dentro de um if
+          payload.cupom_desconto_id = this.selectedIdCoupon
+        }       
+
         const response = await http.post("pedidos", payload);
 
-        console.log('response', response)
+        //console.log('response', response)        
 
-        if (response.data.response === null) {
+        if (response.data.response === null ) {
           window.alert("Fill all the required fields!");
           this.dialogFinalizePurchase = false;
         }
@@ -387,28 +459,10 @@ export default {
           //this.dialogFinalizePurchase = false
         }
 
-        // if (
-        //   response.data.error ==
-        //   "Quantidade requisitada do(a) cadeira madeira verde maior que a do estoque!"
-        // ) {
-        // let cadeiraMadeiraVerde = this.cart.find(
-        //   (produto) => produto.nome == "cadeira madeira verde"
-        // );
-        //let qtdCadeiraMadeiraVerdeNoCarrinho = cadeiraMadeiraVerde.quantidade;
-
-        //   let idCadeiraMadeiraVerdeNoCarrinho = this.cart.findIndex(
-        //     (produto) => produto.nome == "cadeira madeira verde"
-        //   );
-
-        //   this.cart.splice(idCadeiraMadeiraVerdeNoCarrinho, 1);//console.log('carrinho', this.cart)
-
-        //   this.totalPrice -= qtdCadeiraMadeiraVerdeNoCarrinho * cadeiraMadeiraVerde.preco;
-        // }
-
-        //console.log('response aqui', response)
-
-        if (response.statusText == "Created") {
+        if(this.discountInRadioButtons == 1 && response.statusText == "Created") {          
           this.dialogInvoice = true;
+        } else if (this.discountInRadioButtons == 2 && response.statusText == "Created"){          
+          this.dialogInvoice2 = true;
         }
       } catch (e) {
         console.log(e);
@@ -422,6 +476,8 @@ export default {
         window.alert("Your cart is empty yet! Choose an item to proceed!");
       } else if(!this.selectedTypeOfPayment) {
         window.alert("Select a type of payment to proceed!");
+      } else if(this.radioGroup == 0) {
+        window.alert("Select a type of discount in invoice!");
       } else {
         this.dialogFinalizePurchase = true;
       }
@@ -430,6 +486,11 @@ export default {
     closeDialogInvoice() {
       this.dialogFinalizePurchase = false;
       this.dialogInvoice = false;
+    },
+
+    closeDialogInvoice2() {
+      this.dialogFinalizePurchase = false;
+      this.dialogInvoice2 = false;
     },
 
     addToCart() {
@@ -515,8 +576,20 @@ export default {
       //let setedQuantityInCart = this.cart[choosenProductIndex].quantidade;
 
       this.cart = this.cart.map(p => {
+        // if(this.newProductQuantityInCart > p.estoque) {
+        //   console.log('oxee', this.cart[choosenProductIndex].quantidade)
+        //   console.log('oxee2', p.quantidade)
+        //   this.newProductQuantityInCart = this.cart[choosenProductIndex].quantidade
+        //   window.alert('New desired quantity is higher than the storage!')
+        // } 
+
         if(p.id == this.cart[choosenProductIndex].id) {
-          p.quantidade = this.newProductQuantityInCart
+          if(this.newProductQuantityInCart > p.estoque) {
+            window.alert('New desired quantity is higher than the storage!')
+            this.newProductQuantityInCart = p.quantidade
+          } else {
+            p.quantidade = this.newProductQuantityInCart
+          }
         }
         return p
       }
@@ -591,6 +664,9 @@ export default {
 
     subtractNewProductQuantityInCart() {
       this.newProductQuantityInCart--
+      if(this.newProductQuantityInCart <= 0) {
+        this.newProductQuantityInCart = 0
+      }
     },
 
     pressEnterKey(product) {
@@ -634,13 +710,45 @@ export default {
     totalPriceFakeInvoice() {
       let tpc = this.cart.reduce((accumulator, product) =>  {
         return accumulator + product.quantidade * product.preco
-      }, 0)
+      }, 0).toFixed(2)
 
       return this.totalPriceInInvoice = tpc
     },
   },  
 
-  computed: {  
+  computed: {
+
+    cartInvoice2() {
+      let cart = this.cart.map(p => {
+         return p = {
+          ...p,
+          subtotal: (p.quantidade * p.preco).toFixed(2),
+          discount: (p.quantidade * p.preco * this.couponDiscount / 100).toFixed(2),
+          total: (p.quantidade * p.preco - (p.quantidade * p.preco * this.couponDiscount / 100)).toFixed(2)
+         }
+      })
+
+      return cart
+    },
+
+    discountInRadioButtons() {
+      return this.radioGroup
+    },
+
+    discountInReais() {
+      let dir = this.subTotal * this.couponDiscount / 100
+
+      return dir.toFixed(2)
+    },
+
+    subTotal() {
+
+      let subtotal = this.cart.reduce((accumulator, product) =>  {
+        return accumulator + product.quantidade * product.preco
+      }, 0)    
+
+      return subtotal.toFixed(2)
+    }, 
 
     totalPriceComputed() {
 
@@ -668,26 +776,24 @@ export default {
       allProducts: (state) => state.products,
     }),
 
-    ...mapGetters({
-      getAllClients: "getAllClients",
-      getAllProducts: "getAllProducts",
-      getCoupons: "getCoupons"
+    // ...mapGetters({
+    //   getAllClients: "getAllClients",
+    //   getAllProducts: "getAllProducts",
+    //   getCoupons: "getCoupons"
+    // }),
+
+    ...mapGetters('authModule', {
+      getToken: 'getToken'
     }),
-
-      // orderTotalPrice() {
-      // let totalPrice = 0;
-      
-      // this.cart.forEach((order) => {      
-      //   totalPrice += order.preco * order.quantidade;
-      // });      
-
-      //totalPrice = totalPrice.toFixed(2).replace('.', ',')     
-
-      // return this.totalPrice.toLocaleString("pt-BR", {
-      //   style: "currency",
-      //   currency: "BRL",
-      // });
-      // },
+    ...mapGetters('clientModule', {
+      getAllClients: 'getAllClients'
+    }),
+    ...mapGetters('productsModule', {
+      getAllProducts: 'getAllProducts'
+    }),
+    ...mapGetters('couponsModule', {
+      getCoupons: 'getCoupons'
+    }),
 
     getFilteredProducts() {
       if (!this.searchQuery?.trim()) {
@@ -740,6 +846,10 @@ export default {
 </script>
 
 <style>
+.cliente{
+  max-width: 500px;
+}
+
 .produtos {
   display: flex;
   align-items: center;
@@ -751,26 +861,22 @@ export default {
 }
 
 .pagamentoEPreco {
-  max-width: 50%;
+  max-width: 18%;
+  margin: auto;
   /* border: 1px solid red */
 }
 
 .tipoPagamento {
-  width: 20px;
-  max-width: 300px;
-  /* border: 1px solid red */
-}
-
-.precoTotal {
-  width: 3000px;
-  max-width: 300px;
+  /* width: 20px; */
+  max-width: 100%;
   /* border: 1px solid red */
 }
 
 .finalizarCompra {
   position: absolute;
-  bottom: 20px;
+  bottom: 10px;
   right: 20px;
+  
 }
 
 .cart {
@@ -808,5 +914,44 @@ export default {
 .newDesiredQuantity {
   max-width: 15%;
   margin-left: 25px;
+}
+
+.totalPrice {
+  
+  margin: auto;
+}
+
+.cupomDesc {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  align-content: center;
+}
+
+.coupon {
+ margin-top: 32px;
+}
+
+
+
+@media(max-width: 600px) {
+  .totalPrice {
+    max-width: 100%;
+    margin: auto;    
+  }
+
+  .v-btn__content {
+    font-size: 10px;
+  }
+}
+
+@media (min-width: 960) and (max-width: 1264px) {
+
+}
+
+@media (min-width: 960) and (max-width: 1264px) {
+  .modalCartEdit {
+    max-width: 10%;
+  }
 }
 </style>

@@ -61,11 +61,11 @@ export default {
   }),
 
   methods: {
-  ...mapMutations({
+  ...mapMutations('authModule', {
     SET_TOKEN: 'SET_TOKEN'
   }),
 
-  ...mapActions({
+  ...mapActions('authModule', {
     setToken: 'setToken'
   }),
 

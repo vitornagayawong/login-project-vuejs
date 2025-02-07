@@ -286,7 +286,7 @@ export default {
   },
 
   computed: {
-    ...mapGetters({
+    ...mapGetters('productsModule', {
       getAllProducts: "getAllProducts",
       getPagination: "getPagination",
     }),

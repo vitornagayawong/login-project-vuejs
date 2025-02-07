@@ -290,6 +290,8 @@
       </template>
     </v-dialog>
 
+
+    
   </div>
 </template>
 
@@ -305,6 +307,10 @@ export default {
 
   data() {
     return {
+      user: {
+        name: '',
+        email: ''
+      },
       radioGroup: 0,
       totalPriceInInvoice: 0,
       selectedIdCoupon: 0,
@@ -387,6 +393,17 @@ export default {
     //   setCoupons: "setCoupons"
     // }),
 
+    async getUserData() {
+      try {
+        const response = await http.post('me')
+        //console.log('user', response)
+        this.user.name = response.data.name
+        this.user.email = response.data.email
+      } catch(e) {
+        console.log(e)
+      }
+    },
+
     ...mapActions('clientModule', {
       setAllClients: "setAllClients",      
     }),
@@ -439,6 +456,7 @@ export default {
           valor_total: this.totalPriceComputedDot,
           forma_pgt: this.selectedTypeOfPayment,
           produtos: this.cart,
+          user: this.user
         };
 
         if(this.selectedIdCoupon) { //adicionando um atributo dentro de um if
@@ -834,7 +852,9 @@ export default {
     this.setCoupons()
   },
 
-  created() {},
+  created() {
+    this.getUserData()
+  },
 
   onMounted() {},
 

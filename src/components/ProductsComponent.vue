@@ -61,9 +61,7 @@
           </v-card>
         </v-col>
       </v-row>
-    </v-dialog>
-
-    
+    </v-dialog>    
 
     <v-row>
       <v-col cols="12">

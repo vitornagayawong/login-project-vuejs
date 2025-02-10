@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-container>
-      <v-row align="center" >
+      <v-row align="center">
         <v-col class="d-flex" cols="12" sm="12">
           <v-select
             label="Select a Client"
@@ -9,11 +9,13 @@
             item-text="nome"
             item-value="id"
             v-model="selectedClient"
-            :rules="clientRules"            
+            :rules="clientRules"
             autofocus
             :error="!selectedClient"
-            :error-messages="!selectedClient ? 'Select an existing client!' : ''"
-            style="max-width: 40%; margin: auto;"
+            :error-messages="
+              !selectedClient ? 'Select an existing client!' : ''
+            "
+            style="max-width: 40%; margin: auto"
           ></v-select>
         </v-col>
       </v-row>
@@ -32,13 +34,12 @@
               filled
               label="Product name"
               :search-input="searchQuery"
-              @keydown.enter="pressEnterKey()"
-              @keyup="onSearchInput"
+              @keyup="debounceInput($event)"
               class="mx-2 productName"
               color="purple"
               :rules="productRules"
               hide-selected
-              :menu-props="{transition: false}"
+              :menu-props="{ transition: false }"
             ></v-autocomplete>
 
             <v-text-field
@@ -48,6 +49,7 @@
               v-model="selectedProductQuantity"
               class="mx-2"
               :rules="selectedProductQuantityRules"
+              type="number"
             ></v-text-field>
 
             <v-btn @click="addToCart" class="mx-2 mb-7" color="blue">
@@ -75,13 +77,16 @@
           <v-btn icon @click="removeItemFromCart(item)">
             <v-icon>mdi-trash-can</v-icon>
           </v-btn>
-        </template>      
-        
+        </template>
+
         <template v-slot:[`item.preco`]="{ item }">
-          <span>{{ item.preco.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL'
-            }) }}
+          <span
+            >{{
+              item.preco.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })
+            }}
           </span>
         </template>
       </v-data-table>
@@ -100,11 +105,18 @@
             label="Input a new desired quantity"
             v-model="newProductQuantityInCart"
             class="newDesiredQuantity"
+            :rules="selectedProductQuantityRules"
+            type="number"
           ></v-text-field>
 
-          <v-btn class="mx-3 red lighten-2" @click="subtractNewProductQuantityInCart">(-)</v-btn>
-          <v-btn class="green lighten-2" @click="addNewProductQuantityInCart">(+)</v-btn>
-
+          <v-btn
+            class="mx-3 red lighten-2"
+            @click="subtractNewProductQuantityInCart"
+            >(-)</v-btn
+          >
+          <v-btn class="green lighten-2" @click="addNewProductQuantityInCart"
+            >(+)</v-btn
+          >
         </div>
 
         <v-card-actions>
@@ -120,19 +132,18 @@
     <br />
 
     <v-container fluid d-flex justify-center>
-      <v-row        
-        class="pagamentoEPreco"        
-      >
+      <v-row class="pagamentoEPreco">
         <v-col cols="12" lg="6">
-          <v-radio-group v-model="radioGroup">
-            <v-radio             
-              label="Discount in subtotal"
+          <v-radio-group
+            v-model="radioGroup"
+            :rules="radioGroupRules"
+            :error-messages="!radioGroup ? 'Select a type of invoice' : ''"
+          >
+            <v-radio
+              label="Invoice 1 - Discount in subtotal"
               value="1"
             ></v-radio>
-            <v-radio             
-              label="Discount on itens"
-              value="2"
-            ></v-radio>
+            <v-radio label="Invoice 2 - Discount on itens" value="2"></v-radio>
           </v-radio-group>
         </v-col>
 
@@ -146,7 +157,9 @@
             :rules="typeOfPaymentRules"
             class="tipoPagamento"
             :error="!selectedTypeOfPayment"
-            :error-messages="!selectedTypeOfPayment ? 'Select an existing type of payment' : ''"
+            :error-messages="
+              !selectedTypeOfPayment ? 'Select an existing type of payment' : ''
+            "
           ></v-select>
         </v-col>
 
@@ -167,16 +180,14 @@
               placeholder="Discount coupon"
               v-model="txtCoupon"
               outlined
-              :rules="txtCouponRules"
-              :disabled="isTxtCouponDisabled"
+              :rules="txtCouponRules"              
             ></v-text-field>
           </v-col>
-  
+
           <v-col cols="12" sm="6">
             <v-btn @click="applyCoupon">Apply</v-btn>
           </v-col>
         </div>
-
       </v-row>
     </v-container>
 
@@ -227,20 +238,26 @@
               <v-col>{{ product.quantidade }}</v-col>
               <v-col>R$ {{ product.quantidade * product.preco }}</v-col>
             </v-row>
-            <v-row d-flex> 
+            <v-row d-flex>
               <v-col>
-                <v-card-text>Subtotal: R$ {{ this.totalPriceFakeInvoice() }}</v-card-text>
+                <v-card-text
+                  >Subtotal: R$ {{ this.totalPriceFakeInvoice() }}</v-card-text
+                >
               </v-col>
               <v-col>
                 <v-card-text>Discount: R$ {{ discountInReais }}</v-card-text>
               </v-col>
               <v-col>
-                <v-card-text>Total Price: {{ this.totalPriceComputed }}</v-card-text>
+                <v-card-text
+                  >Total Price: {{ this.totalPriceComputed }}</v-card-text
+                >
               </v-col>
             </v-row>
-          </div>          
+          </div>
           <v-card-actions class="justify-end">
-            <v-btn text @click="closeDialogInvoice" class="red accent-4">Close</v-btn>
+            <v-btn text @click="closeDialogInvoice" class="red accent-4"
+              >Close</v-btn
+            >
           </v-card-actions>
         </v-card>
       </template>
@@ -252,8 +269,8 @@
       v-model="dialogInvoice2"
     >
       <template>
-        <v-card >
-          <v-toolbar color="primary" dark>INVOICE 2</v-toolbar>    
+        <v-card>
+          <v-toolbar color="primary" dark>INVOICE 2</v-toolbar>
           <div class="px-10 mt-10">
             <v-row>
               <v-col>Name</v-col>
@@ -269,29 +286,36 @@
               <v-col>R$ {{ product.discount }} </v-col>
               <v-col>R$ {{ product.total }} </v-col>
             </v-row>
-            <v-row> 
+            <v-row>
               <v-col d-flex justify-space-between>
-                <v-card-text>Subtotal: R$ {{ this.totalPriceFakeInvoice() }}</v-card-text>
+                <v-card-text
+                  >Subtotal: R$ {{ this.totalPriceFakeInvoice() }}</v-card-text
+                >
               </v-col>
               <v-col>
                 <v-card-text>Discount: R$ {{ discountInReais }}</v-card-text>
               </v-col>
               <v-col>
-                <v-card-text>Total Price: {{ this.totalPriceComputed }}</v-card-text>
+                <v-card-text
+                  >Total Price: {{ this.totalPriceComputed }}</v-card-text
+                >
               </v-col>
             </v-row>
-          </div>      
-          
-          <v-card-actions class="justify-end">
-            <v-btn text @click="closeDialogInvoice2" class="deep-purple lighten-2">Close</v-btn>
-          </v-card-actions>
+          </div>
 
+          <v-card-actions class="justify-end">
+            <v-btn
+              text
+              @click="closeDialogInvoice2"
+              class="deep-purple lighten-2"
+              >Close</v-btn
+            >
+          </v-card-actions>
         </v-card>
       </template>
     </v-dialog>
 
-
-    
+    {{ this.getAllProducts }}
   </div>
 </template>
 
@@ -299,40 +323,40 @@
 import http from "@/axios";
 import { mapActions, mapGetters, mapState } from "vuex";
 import { debounce } from "lodash";
-//import TotalPrice from "./TotalPrice.vue";
 
 export default {
-  //components: { TotalPrice },
   name: "PdvComponent2",
 
   data() {
     return {
       user: {
-        name: '',
-        email: ''
+        name: "",
+        email: "",
       },
       radioGroup: 0,
       totalPriceInInvoice: 0,
       selectedIdCoupon: 0,
-      isTxtCouponDisabled: false,
+      //isTxtCouponDisabled: false,
       couponDiscount: 0,
-      txtCoupon: '',
+      txtCoupon: "",
       precoComPonto: "",
       dialogInvoice: false,
       dialogInvoice2: false,
-      clientRules: [
-        (client) => !!client || "Select a client!", 
-      ],
+      clientRules: [(client) => !!client || "Select a client!"],
       productRules: [
         (product) => !!product || "Insert a product!",
-        //(product) => (product && product.id) || 'Invalid product selected!',
       ],
       typeOfPaymentRules: [(payment) => !!payment || "Choose a payment!"],
+      radioGroupRules: [
+        (radioGroup) => !!radioGroup || "Choose a invoice type!",
+      ],
       selectedProductQuantityRules: [
-        (selectedProductQuantity) => typeof(selectedProductQuantity) != Number || 'This must be numeric!'
+        (selectedProductQuantity) =>
+          typeof selectedProductQuantity != Number || "This must be numeric!",
+        (selectedProductQuantity) =>
+          selectedProductQuantity > 0 || "Quantity must be higher than zero!",
       ],
       dialogFinalizePurchase: false,
-      //totalPrice: 0,
       value: null,
       selectedClient: "",
       searchQuery: "",
@@ -370,10 +394,9 @@ export default {
           align: "start",
           sortable: false,
           value: "nome",
-        
         },
         { text: "Description", value: "descricao" },
-        { text: "Price", value: "preco", width: '100px' },
+        { text: "Price", value: "preco", width: "100px" },
         { text: "Weight", value: "peso" },
         { text: "Height", value: "altura" },
         { text: "Quantity", value: "quantidade" },
@@ -381,8 +404,8 @@ export default {
       ],
       filterProducts: [],
       txtCouponRules: [
-        () => this.txtCoupon.length <= 3 || 'Text max lenght is 3'
-      ]
+        () => this.txtCoupon.length <= 3 || "Text max lenght is 3",
+      ],
     };
   },
 
@@ -392,26 +415,39 @@ export default {
     //   setAllProducts: "setAllProducts",
     //   setCoupons: "setCoupons"
     // }),
+    async debounceInput(e) {
+      //await this.$nextTick()
+      //console.log('aquiiii', JSON.stringify(e?.target?.value))
+      const forbiddenKeys = [38, 40];
+      if (forbiddenKeys.includes(e.keyCode)) {
+        //console.log("oi");
+        return;
+      }
+      //console.log('aquiiii', e)
+      this.searchQuery = e.target.value
+      //await this.setAllProducts(this.searchQuery);
+      this.debouncedSetAllProducts(e.target.value);
+    },
 
     async getUserData() {
       try {
-        const response = await http.post('me')
+        const response = await http.post("me");
         //console.log('user', response)
-        this.user.name = response.data.name
-        this.user.email = response.data.email
-      } catch(e) {
-        console.log(e)
+        this.user.name = response.data.name;
+        this.user.email = response.data.email;
+      } catch (e) {
+        console.log(e);
       }
     },
 
-    ...mapActions('clientModule', {
-      setAllClients: "setAllClients",      
+    ...mapActions("clientModule", {
+      setAllClients: "setAllClients",
     }),
-    ...mapActions('productsModule', {
-      setAllProducts: "setAllProducts",      
+    ...mapActions("productsModule", {
+      setAllProducts: "setAllProducts",
     }),
-    ...mapActions('couponsModule', {
-      setCoupons: "setCoupons",      
+    ...mapActions("couponsModule", {
+      setCoupons: "setCoupons",
     }),
 
     openModal(product) {
@@ -421,7 +457,7 @@ export default {
 
     openModalCart(product) {
       this.selectedProduct = product;
-      this.newProductQuantityInCart = product.quantidade
+      this.newProductQuantityInCart = product.quantidade;
       this.modalCart = true;
     },
 
@@ -452,34 +488,38 @@ export default {
           cliente_id: this.selectedClient,
           data: fullDate,
           subtotal: this.subTotal,
-          desconto_porcentagem: this.couponDiscount, 
+          desconto_porcentagem: this.couponDiscount,
           valor_total: this.totalPriceComputedDot,
           forma_pgt: this.selectedTypeOfPayment,
           produtos: this.cart,
-          user: this.user
+          user: this.user,
         };
 
-        if(this.selectedIdCoupon) { //adicionando um atributo dentro de um if
-          payload.cupom_desconto_id = this.selectedIdCoupon
-        }       
+        if (this.selectedIdCoupon) {
+          //adicionando um atributo dentro de um if
+          payload.cupom_desconto_id = this.selectedIdCoupon;
+        }
 
         const response = await http.post("pedidos", payload);
 
-        //console.log('response', response)        
-
-        if (response.data.response === null ) {
+        if (response.data.response === null) {
           window.alert("Fill all the required fields!");
           this.dialogFinalizePurchase = false;
         }
 
         if (response.data.error) {
           window.alert(response.data.error);
-          //this.dialogFinalizePurchase = false
         }
 
-        if(this.discountInRadioButtons == 1 && response.statusText == "Created") {          
+        if (
+          this.discountInRadioButtons == 1 &&
+          response.statusText == "Created"
+        ) {
           this.dialogInvoice = true;
-        } else if (this.discountInRadioButtons == 2 && response.statusText == "Created"){          
+        } else if (
+          this.discountInRadioButtons == 2 &&
+          response.statusText == "Created"
+        ) {
           this.dialogInvoice2 = true;
         }
       } catch (e) {
@@ -490,11 +530,11 @@ export default {
     openDialogFinalizePurchase() {
       if (!this.selectedClient) {
         window.alert("Select a client to proceed!");
-      } else if(this.cart.length == 0) {
+      } else if (this.cart.length == 0) {
         window.alert("Your cart is empty yet! Choose an item to proceed!");
-      } else if(!this.selectedTypeOfPayment) {
+      } else if (!this.selectedTypeOfPayment) {
         window.alert("Select a type of payment to proceed!");
-      } else if(this.radioGroup == 0) {
+      } else if (this.radioGroup == 0) {
         window.alert("Select a type of discount in invoice!");
       } else {
         this.dialogFinalizePurchase = true;
@@ -513,71 +553,43 @@ export default {
 
     addToCart() {
       try {
-       
         let prod = this.getAllProducts.find(
           (product) => product.id == this.selectedProduct
         );
 
-        if (this.selectedProductQuantity == 0) {
+        if (this.selectedProductQuantity <= 0) {
           window.alert("Quantity has to be more than zero!");
-          this.selectedProductQuantity = 1
+          this.selectedProductQuantity = 1;
         } else if (this.selectedProductQuantity > prod.estoque) {
-          window.alert(`We don't have this quantity in our storage, sorry! Now it's available only ${prod.estoque} units!`);
-          this.selectedProductQuantity = 1
+          window.alert(
+            `We don't have this quantity in our storage, sorry! Now it's available only ${prod.estoque} units!`
+          );
+          this.selectedProductQuantity = 1;
         } else {
           if (prod) {
             let productAlreadyInCart = this.cart.find((p) => p.id === prod.id);
-            let producIndextAlreadyInCart = this.cart.findIndex((p) => p.id === prod.id);
+            let producIndextAlreadyInCart = this.cart.findIndex(
+              (p) => p.id === prod.id
+            );
 
             if (productAlreadyInCart) {
-              // productAlreadyInCart.quantidade += Number(
-              //   this.selectedProductQuantity
 
-              //console.log(productAlreadyInCart)
-              //console.log('index', producIndextAlreadyInCart)
-              //console.log('cartt',this.cart)
-
-              this.cart = this.cart.map(p => {    //esse map retorna um novo array mapeado, por isso vc precisa atribuir esse novo array ao this.cart original   
-                if(p.id == this.cart[producIndextAlreadyInCart].id) {
-                    p.quantidade += this.selectedProductQuantity
+              this.cart = this.cart.map((p) => {
+                //esse map retorna um novo array mapeado, por isso vc precisa atribuir esse novo array ao this.cart original
+                if (p.id == this.cart[producIndextAlreadyInCart].id) {
+                  p.quantidade += parseInt(this.selectedProductQuantity);
                 }
-                return p //não esquecer o return devido à chave
-              })
-
-              // );
-              // productAlreadyInCart = { 
-              //   ...productAlreadyInCart, quantidade: productAlreadyInCart.quantidade + Number(this.selectedProductQuantity) }
-              
-             // this.totalPrice += this.selectedProductQuantity * productAlreadyInCart.preco;
-              
-             //this.totalPrice.toFixed(2)           
-             //console.log('aquiiiiiiiiyuyuyy')   
-              
+                return p; //não esquecer o return devido à chave
+              });
             } else {
-              //console.log('caiu quii')
               prod.quantidade = Number(this.selectedProductQuantity);
               this.cart.push(prod);
-              //console.log('aqui', obj)
-             //this.totalPrice += prod.quantidade * prod.preco;
             }
-            // obj.quantidade = this.selectedProductQuantity;
-            // //console.log('aqui',this.selectedProductQuantity)
-            // this.cart.push(obj);
-
-            // if(this.cart.length > 0) {
-            //   this.cart.reduce((anterior, atual) => {
-            //     //this.totalPrice += Number(anterior.preco)
-            //     this.totalPrice += Number(atual.preco)
-            //   }, 0)
-            // } else {
-
-            // }
-
+            
             this.selectedProduct = {};
             this.selectedProductQuantity = 1;
-          }          
+          }
         }
-        
       } catch (e) {
         console.log(e);
       }
@@ -590,28 +602,22 @@ export default {
 
       //console.log('choosenProductIndex', choosenProductIndex)
       //console.log('newProductQuantityInCart', this.newProductQuantityInCart)
-
       //let setedQuantityInCart = this.cart[choosenProductIndex].quantidade;
 
-      this.cart = this.cart.map(p => {
-        // if(this.newProductQuantityInCart > p.estoque) {
-        //   console.log('oxee', this.cart[choosenProductIndex].quantidade)
-        //   console.log('oxee2', p.quantidade)
-        //   this.newProductQuantityInCart = this.cart[choosenProductIndex].quantidade
-        //   window.alert('New desired quantity is higher than the storage!')
-        // } 
-
-        if(p.id == this.cart[choosenProductIndex].id) {
-          if(this.newProductQuantityInCart > p.estoque) {
-            window.alert('New desired quantity is higher than the storage!')
+      this.cart = this.cart.map((p) => {
+        if (p.id == this.cart[choosenProductIndex].id) {
+          if (this.newProductQuantityInCart > p.estoque) {
+            window.alert("New desired quantity is higher than the storage!");
+            this.newProductQuantityInCart = p.quantidade;
+          } else if(this.newProductQuantityInCart <= 0) {
+            window.alert('New desired quantity has to be more than zero!')
             this.newProductQuantityInCart = p.quantidade
           } else {
-            p.quantidade = this.newProductQuantityInCart
+            p.quantidade = this.newProductQuantityInCart;
           }
         }
-        return p
-      }
-    )
+        return p;
+      });
 
       //this.cart[choosenProductIndex].quantidade = this.newProductQuantityInCart;
 
@@ -620,17 +626,18 @@ export default {
       //   this.cart[choosenProductIndex].preco;
     },
 
-    removeItemFromCart(product) { 
+    removeItemFromCart(product) {
+      let confirm = window.confirm(
+        "Are you sure you want to remove this item from cart?"
+      );
 
-      let confirm = window.confirm("Are you sure you want to remove this item from cart?")
+      if (confirm) {
+        let allProductsExceptTheChoosenOne = this.cart.filter((p) => {
+          return p.id != product.id;
+        });
 
-      if(confirm) {
-        let allProductsExceptTheChoosenOne = this.cart.filter( p => {
-          return p.id != product.id
-        })
-
-        this.cart = allProductsExceptTheChoosenOne
-      }       
+        this.cart = allProductsExceptTheChoosenOne;
+      }
 
       /* LÓGICA USANDO O MÉTODO FILTER     
 
@@ -666,131 +673,134 @@ export default {
     },
 
     debouncedSetAllProducts: debounce(function (query) {
+      console.log('query', query)
+      //let seila = 
+      //console.log('seila', seila)
       //arrow function não funciona bem por causa do this dentro da função
       this.setAllProducts(query);
     }, 350), // 350ms de atraso
 
-    onSearchInput(query) {
-      //evento listener de v-autocomplete     
-      this.searchQuery = query.target.value;
-      this.debouncedSetAllProducts(this.searchQuery);
-    },
+    // onSearchInput(query) {
+    //   //evento listener de v-autocomplete
+    //   this.searchQuery = query.target.value;
+    //   console.log(this.searchQuery)
+    //   this.debouncedSetAllProducts(this.searchQuery);
+    // },
 
     addNewProductQuantityInCart() {
-      this.newProductQuantityInCart++
-    }, 
+      this.newProductQuantityInCart++;
+    },
 
     subtractNewProductQuantityInCart() {
-      this.newProductQuantityInCart--
-      if(this.newProductQuantityInCart <= 0) {
-        this.newProductQuantityInCart = 0
+      this.newProductQuantityInCart--;
+      if (this.newProductQuantityInCart <= 0) {
+        this.newProductQuantityInCart = 0;
       }
     },
 
     pressEnterKey(product) {
-      let selectedItem = this.cart.find(p => p.id == product.id)
+      let selectedItem = this.cart.find((p) => p.id == product.id);
 
-      if(selectedItem) {
-        this.selectedProduct = selectedItem
+      if (selectedItem) {
+        this.selectedProduct = selectedItem;
       }
     },
 
-    applyCoupon() { 
-      let couponChoosen = this.getCoupons.filter(c => {
+    applyCoupon() {
+      let couponChoosen = this.getCoupons.filter((c) => {
         //console.log('c' , c.codigo)
-        return c.codigo == this.txtCoupon
-      })
+        return c.codigo == this.txtCoupon;
+      });
 
       //console.log('antes',couponChoosen)
-      
-      if(couponChoosen.length != 0) { //aqui achou o cupom
-        //console.log('this.totalPriceComputed', this.totalPriceComputed)
-        if(this.totalPriceComputed == 'R$ 0,00') {
-          window.alert('Choose a product before to continue!')        
-        } else { //tem pelo menos um produto no carrinho
-          //console.log('couponChoosen.valor_desconto', couponChoosen[0].valor_desconto)
-          //console.log('this.totalPriceComputed', this.totalPriceComputed)
-          this.couponDiscount = Number(couponChoosen[0].valor_desconto)
-          this.isTxtCouponDisabled = true
-          this.selectedIdCoupon = couponChoosen[0].id
-          //console.log('aquii', this.couponDiscount)
-          return this.couponDiscount
-        }
-        //console.log('oiii')          
-        
-      } else {
-        window.alert('Coupon not found!')
-        this.txtCoupon = ''
-      }
 
+      if (couponChoosen.length != 0) { //aqui achou o cupom        
+        if (this.totalPriceComputed == "R$ 0,00") {
+          window.alert("Choose a product before to continue!");
+        } else {
+          //tem pelo menos um produto no carrinho
+          this.couponDiscount = Number(couponChoosen[0].valor_desconto);
+          //this.isTxtCouponDisabled = true;
+          this.selectedIdCoupon = couponChoosen[0].id;
+          return this.couponDiscount;
+        }
+        //console.log('oiii')
+      } else {
+        window.alert("Coupon not found!");
+        this.txtCoupon = "";
+      }
     },
 
     totalPriceFakeInvoice() {
-      let tpc = this.cart.reduce((accumulator, product) =>  {
-        return accumulator + product.quantidade * product.preco
-      }, 0).toFixed(2)
+      let tpc = this.cart
+        .reduce((accumulator, product) => {
+          return accumulator + product.quantidade * product.preco;
+        }, 0)
+        .toFixed(2);
 
-      return this.totalPriceInInvoice = tpc
+      return (this.totalPriceInInvoice = tpc);
     },
-  },  
+  },
 
   computed: {
-
     cartInvoice2() {
-      let cart = this.cart.map(p => {
-         return p = {
+      let cart = this.cart.map((p) => {
+        return (p = {
           ...p,
           subtotal: (p.quantidade * p.preco).toFixed(2),
-          discount: (p.quantidade * p.preco * this.couponDiscount / 100).toFixed(2),
-          total: (p.quantidade * p.preco - (p.quantidade * p.preco * this.couponDiscount / 100)).toFixed(2)
-         }
-      })
+          discount: (
+            (p.quantidade * p.preco * this.couponDiscount) /
+            100
+          ).toFixed(2),
+          total: (
+            p.quantidade * p.preco -
+            (p.quantidade * p.preco * this.couponDiscount) / 100
+          ).toFixed(2),
+        });
+      });
 
-      return cart
+      return cart;
     },
 
     discountInRadioButtons() {
-      return this.radioGroup
+      return this.radioGroup;
     },
 
     discountInReais() {
-      let dir = this.subTotal * this.couponDiscount / 100
-
-      return dir.toFixed(2)
+      let dir = (this.subTotal * this.couponDiscount) / 100;
+      return dir.toFixed(2);
     },
 
     subTotal() {
+      let subtotal = this.cart.reduce((accumulator, product) => {
+        return accumulator + product.quantidade * product.preco;
+      }, 0);
 
-      let subtotal = this.cart.reduce((accumulator, product) =>  {
-        return accumulator + product.quantidade * product.preco
-      }, 0)    
-
-      return subtotal.toFixed(2)
-    }, 
+      return subtotal.toFixed(2);
+    },
 
     totalPriceComputed() {
+      let tpc = this.cart.reduce((accumulator, product) => {
+        return accumulator + product.quantidade * product.preco;
+      }, 0);
 
-      let tpc = this.cart.reduce((accumulator, product) =>  {
-        return accumulator + product.quantidade * product.preco
-      }, 0)
+      tpc = tpc * (100 - this.couponDiscount) * 0.01;
 
-      tpc = tpc * (100 - this.couponDiscount) * 0.01 
-
-      return tpc.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      })
-    }, 
+      return tpc.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL",
+      });
+    },
 
     totalPriceComputedDot() {
-      let tpcd = this.cart.reduce((accumulator, product) =>  {
-        return accumulator + product.quantidade * product.preco
-      }, 0)
+      let tpcd = this.cart.reduce((accumulator, product) => {
+        return accumulator + product.quantidade * product.preco;
+      }, 0);
 
-      return tpcd.toFixed(2)
-    }, 
+      return tpcd.toFixed(2);
+    },
 
-    ...mapState({
+    ...mapState('productsModule', {
       allProducts: (state) => state.products,
     }),
 
@@ -800,28 +810,34 @@ export default {
     //   getCoupons: "getCoupons"
     // }),
 
-    ...mapGetters('authModule', {
-      getToken: 'getToken'
+    ...mapGetters("authModule", {
+      getToken: "getToken",
     }),
-    ...mapGetters('clientModule', {
-      getAllClients: 'getAllClients'
+    ...mapGetters("clientModule", {
+      getAllClients: "getAllClients",
     }),
-    ...mapGetters('productsModule', {
-      getAllProducts: 'getAllProducts'
+    ...mapGetters("productsModule", {
+      getAllProducts: "getAllProducts",
     }),
-    ...mapGetters('couponsModule', {
-      getCoupons: 'getCoupons'
+    ...mapGetters("couponsModule", {
+      getCoupons: "getCoupons",
     }),
 
     getFilteredProducts() {
+      //console.log('nao passou', this.searchQuery)
+
       if (!this.searchQuery?.trim()) {
         return this.getAllProducts;
       }
+
+      //console.log('passou')
 
       const queryKeywords = this.searchQuery
         .toLowerCase()
         .split(/\s+/) // Divide o termo de pesquisa por espaços em branco
         .filter((word) => word.length > 0); // Remove palavras vazias
+
+        console.log('queryKeywords', queryKeywords)
 
       return this.getAllProducts.filter((product) => {
         // Verifique se todas as palavras-chave aparecem no nome ou descrição
@@ -842,31 +858,30 @@ export default {
   //     cart(newValue, oldValue) => {
   //       console.log('newValue', newValue)
   //       console.log('oldValue', oldValue)
-        
+
   //     }
   //   },
 
   mounted() {
-    this.setAllClients();    
+    this.setAllClients();
     this.setAllProducts(this.searchQuery);
-    this.setCoupons()
+    this.setCoupons();
   },
 
   created() {
-    this.getUserData()
+    this.getUserData();
   },
 
   onMounted() {},
 
   beforeUpdate() {},
-  
-  updated() {
-  },
+
+  updated() {},
 };
 </script>
 
 <style>
-.cliente{
+.cliente {
   max-width: 500px;
 }
 
@@ -896,7 +911,6 @@ export default {
   position: absolute;
   bottom: 10px;
   right: 20px;
-  
 }
 
 .cart {
@@ -937,7 +951,6 @@ export default {
 }
 
 .totalPrice {
-  
   margin: auto;
 }
 
@@ -949,15 +962,13 @@ export default {
 }
 
 .coupon {
- margin-top: 32px;
+  margin-top: 32px;
 }
 
-
-
-@media(max-width: 600px) {
+@media (max-width: 600px) {
   .totalPrice {
     max-width: 100%;
-    margin: auto;    
+    margin: auto;
   }
 
   .v-btn__content {
@@ -966,7 +977,6 @@ export default {
 }
 
 @media (min-width: 960) and (max-width: 1264px) {
-
 }
 
 @media (min-width: 960) and (max-width: 1264px) {

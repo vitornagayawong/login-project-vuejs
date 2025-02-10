@@ -38,12 +38,11 @@ export const productsModule = {
   actions: {
     async setAllProducts({ commit, state }, payload) {
       try {
-        //console.log(payload)
-        //console.log(commit)
         let encoded = "";
-
+        //console.log('payload',payload)
         if (payload) {
-          encoded = encodeURI(`&filtroNomeProd=nome:like:${payload}`); //console.log(encoded)
+          //encoded = encodeURI(`&filtroNomeProd=nome:like:${payload}`); 
+          encoded = encodeURI(`&filtro=nome:like:${payload};descricao:like:${payload}`); 
         }
 
         //const { data } = await http.get(`produtos?page=${state.page}${encoded}`)
@@ -62,8 +61,9 @@ export const productsModule = {
         console.log(exception);
       }
     },
+
     setPage({commit}, payload) {
-        commit('SET_PAGE', payload)
-      },
+      commit('SET_PAGE', payload)
+    },
   },
 };

@@ -314,8 +314,6 @@
         </v-card>
       </template>
     </v-dialog>
-
-    {{ this.getAllProducts }}
   </div>
 </template>
 

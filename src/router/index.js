@@ -10,6 +10,7 @@ import PdvComponent from "@/components/PdvComponent.vue";
 import ProductsComponent from "@/components/ProductsComponent.vue";
 import PdvComponent2 from "@/components/PdvComponent2.vue";
 import OrdersComponent from "@/components/OrdersComponent.vue";
+import ClientComponentRegister from "@/components/ClientComponentRegister.vue";
 
 Vue.use(VueRouter);
 
@@ -34,6 +35,12 @@ const routes = [
     path: "/client",
     name: "ClientComponent",
     component: ClientComponent,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/clientRegister",
+    name: "ClientComponentRegister",
+    component: ClientComponentRegister,
     meta: { requiresAuth: true },
   },
   {

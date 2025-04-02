@@ -47,7 +47,7 @@ export default {
   },
 
   methods: {
-    ...mapActions({
+    ...mapActions("ordersModule", {
         setOrders: 'setOrders',
         setPageOrders: 'setPageOrders'
     }),
@@ -59,11 +59,11 @@ export default {
   },    
 
   computed: {
-    ...mapState({
+    ...mapState("ordersModule", {
         lastPage: state => state.paginationOrders.lastPage
     }),
 
-    ...mapGetters({
+    ...mapGetters("ordersModule",{
         getOrders: 'getOrders',
     }),
 

@@ -27,6 +27,27 @@
       label="Password"
       required
     ></v-text-field>
+    
+    <v-text-field
+      v-model="address.cidade"
+      :rules="[v => !!v || 'Cidade is required']"
+      label="Cidade"
+      required
+    ></v-text-field>
+
+    <v-text-field
+      v-model="address.rua"
+      :rules="[v => !!v || 'Rua is required']"
+      label="Rua"
+      required
+    ></v-text-field>
+
+    <v-text-field
+      v-model="address.cep"
+      :rules="[v => !!v || 'CEP is required']"
+      label="CEP"
+      required
+    ></v-text-field>
 
     <v-checkbox
       v-model="checkbox"
@@ -73,6 +94,11 @@ import http from '@/axios';
         v => /.+@.+\..+/.test(v) || 'E-mail must be valid',
       ],
       password: '',
+      address: {
+        cidade: '',
+        rua: '',
+        cep: ''
+      },
       checkbox: false,
     }),
 
@@ -84,6 +110,8 @@ import http from '@/axios';
             formData.append('name', this.name)
             formData.append('email', this.email)
             formData.append('password', this.password)
+            //formData.append('address', JSON.stringify(this.address))
+            
 
             // let payload = {
             //     name: this.name,
@@ -92,8 +120,6 @@ import http from '@/axios';
             // }
     
             const response = await http.post(`user`, formData)
-            //const response = await http.post(`${this.$store.state.baseURL}user`, formData)
-            //const response = await http.post(`${this.$store.state.baseURL}user`, payload)
 
             console.log('usuarioooo', response)
     

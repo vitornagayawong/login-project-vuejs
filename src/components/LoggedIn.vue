@@ -84,7 +84,8 @@ export default {
         { title: "Orders", icon: "mdi-truck-fast", route: "/orders" },
         { title: "Pdv1", icon: "mdi-cash-multiple", route: "/pdv" },
         { title: "Pdv2", icon: "mdi-cash-multiple", route: "/pdv2" },
-        { title: "Client", icon: "mdi-human", route: "/pdv2" },
+        { title: "Client", icon: "mdi-human", route: "/client" },
+        { title: "Client Register", icon: "mdi-human", route: "/clientRegister" },
       ],
   }),
 
